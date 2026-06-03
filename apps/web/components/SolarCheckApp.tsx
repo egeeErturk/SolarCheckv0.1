@@ -120,6 +120,29 @@ const shadeLoss: Record<ShadeObstacle, number> = {
   unknown: 20
 };
 
+const packageCopy: Record<"A" | "B" | "C" | "D", { tag: string; badge: string; description: string }> = {
+  A: {
+    tag: "Alan verimliliği",
+    badge: "Önerilen",
+    description: "Küçük alanlardan yüksek üretim almak isteyenler için."
+  },
+  B: {
+    tag: "Maksimum üretim",
+    badge: "En yüksek üretim",
+    description: "En yüksek üretim hedefleyen kullanıcılar için."
+  },
+  C: {
+    tag: "Fiyat/performans",
+    badge: "Dengeli",
+    description: "Üretim ve maliyet arasında dengeli seçenek."
+  },
+  D: {
+    tag: "Başlangıç",
+    badge: "Başlangıç",
+    description: "Düşük maliyetle güneşe başlamak isteyenler için."
+  }
+};
+
 const monthFactors = [0.055, 0.066, 0.087, 0.098, 0.108, 0.116, 0.12, 0.112, 0.093, 0.077, 0.055, 0.041];
 const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 const projectionYears = [5, 10, 15, 20, 25];
@@ -723,18 +746,16 @@ function ResultsPage({
         Kış aylarında güneş açısı ve gün uzunluğu nedeniyle üretim düşebilir.
       </InfoBand>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="mt-8">
         <ProfitProjectionLineChart gains={gains} currency={currency} paybackYears={result.recommendedPackage.paybackYears} />
+      </div>
+      <div className="mt-6">
         <LossBreakdownChart losses={losses} />
       </div>
 
       <MonthlyProductionChart monthly={monthly} peak={peak} low={low} className="mt-8" />
 
-      <div className={`${motionClasses.staggerContainer} mt-8 grid gap-5 lg:grid-cols-4`}>
-        {result.packages.map((pkg) => (
-          <PackageCard key={pkg.id} pkg={pkg} currency={currency} recommended={pkg.id === "A"} onLead={() => openLead(pkg)} />
-        ))}
-      </div>
+      <PanelPackageGrid packages={result.packages} currency={currency} openLead={openLead} />
 
       <PackageComparisonChart packages={result.packages} currency={currency} />
 
@@ -780,59 +801,53 @@ function ProfitProjectionLineChart({ gains, currency, paybackYears }: { gains: P
   const final = gains[gains.length - 1];
   const chart = getSmoothLineChart(gains);
   const lineColor = financialColor(final.value);
+  const zeroStop = Math.max(0, Math.min(100, (chart.zeroY / 360) * 100));
   return (
     <ChartCard
-      title="5 / 10 / 15 / 20 / 25 yıllık tahmini net kazanç"
-      subtitle={`25 yıllık projeksiyonda tahmini net sonuç ${currencyFormat(final.value, currency)} olabilir.`}
+      title="25 Yıla Kadar Kâr/Zarar Projeksiyonu"
+      subtitle="Bu grafik, sistemin yıllar içinde ilk yatırım maliyetini ne zaman geri kazandırabileceğini ve uzun vadede ne kadar net kazanç sağlayabileceğini gösterir."
+      badge="İnteraktif"
+      className="profit-chart-card"
     >
-      <div className={`${motionClasses.chartReveal} mt-6 grid gap-5 lg:grid-cols-[1fr_230px]`}>
-        <div className="relative min-h-80 rounded-lg border border-slate-100 bg-slate-50/70 p-4">
-          <svg className="h-72 w-full overflow-visible" viewBox="0 0 620 280" role="img" aria-label="Uzun vadeli net kazanç çizgi grafiği">
+      <div className={`${motionClasses.chartReveal} mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]`}>
+        <div className="relative min-h-[360px] rounded-lg border border-slate-100 bg-slate-50/70 p-4 md:min-h-[420px]">
+          <svg className="h-[320px] w-full overflow-visible md:h-[380px]" viewBox="0 0 720 360" role="img" aria-label="Uzun vadeli net kazanç çizgi grafiği">
             <defs>
               <linearGradient id="profit-area" x1="0" x2="0" y1="0" y2="1">
                 <stop offset="0%" stopColor={lineColor} stopOpacity="0.24" />
                 <stop offset="100%" stopColor={lineColor} stopOpacity="0.02" />
               </linearGradient>
+              <linearGradient id="profit-loss-stroke" x1="0" x2="0" y1="0" y2="360" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor={resultColors.profitGreenStrong} />
+                <stop offset={`${zeroStop}%`} stopColor={resultColors.profitGreenStrong} />
+                <stop offset={`${zeroStop}%`} stopColor={resultColors.lossNavy} />
+                <stop offset="100%" stopColor={resultColors.lossNavy} />
+              </linearGradient>
             </defs>
-            <line x1="44" x2="588" y1={chart.zeroY} y2={chart.zeroY} stroke={resultColors.gridLine} strokeDasharray="4 5" />
+            <line x1="54" x2="674" y1={chart.zeroY} y2={chart.zeroY} stroke={resultColors.breakEvenYellow} strokeDasharray="5 6" />
+            <text x="58" y={Math.max(18, chart.zeroY - 8)} className="fill-slate-500 text-[12px] font-black">Başabaş çizgisi</text>
             <path className="profit-area-path" d={`${chart.areaPath} L ${chart.points[chart.points.length - 1].x} ${chart.zeroY} L ${chart.points[0].x} ${chart.zeroY} Z`} fill="url(#profit-area)" />
-            <path className="profit-line-path" d={chart.path} fill="none" stroke={lineColor} strokeWidth="4" strokeLinecap="round" />
+            <path className="profit-line-path" d={chart.path} fill="none" stroke="url(#profit-loss-stroke)" strokeWidth="4" strokeLinecap="round" />
             {chart.points.map((point) => {
               return (
                 <g key={point.year} className="chart-svg-point">
-                  <line className="profit-reference-line" x1={point.x} x2={point.x} y1="24" y2="236" stroke={resultColors.gridLine} strokeDasharray="4 5" />
-                  <circle cx={point.x} cy={point.y} r="7" fill={financialColor(point.value)} stroke={resultColors.card} strokeWidth="3" />
-                  <foreignObject x={Math.min(420, Math.max(46, point.x - 116))} y={Math.min(98, Math.max(24, point.y - 88))} width="238" height="150" className="pointer-events-none opacity-0 transition-opacity duration-150 chart-svg-tooltip">
-                    <ProfitTooltip point={point} currency={currency} />
+                  <line className="profit-reference-line" x1={point.x} x2={point.x} y1="32" y2="302" stroke={resultColors.gridLine} strokeDasharray="4 5" />
+                  <circle cx={point.x} cy={point.y} r="8" fill={financialColor(point.value)} stroke={resultColors.card} strokeWidth="3" />
+                  <foreignObject x={Math.min(466, Math.max(58, point.x - 130))} y={Math.min(150, Math.max(28, point.y - 112))} width="260" height="166" className="pointer-events-none opacity-0 transition-opacity duration-150 chart-svg-tooltip">
+                    <ProfitProjectionTooltip point={point} currency={currency} />
                   </foreignObject>
                 </g>
               );
             })}
             {chart.points.map((point) => (
-              <text key={`label-${point.year}`} x={point.x} y="270" textAnchor="middle" className="profit-year-label fill-slate-500 text-[13px] font-bold">
-                {point.year} yıl
+              <text key={`label-${point.year}`} x={point.x} y="342" textAnchor="middle" className="profit-year-label fill-slate-500 text-[14px] font-black">
+                {point.year}Y
               </text>
             ))}
-            {paybackYears && paybackYears <= 25 && (
-              <g>
-                <line x1={chart.paybackX(paybackYears)} x2={chart.paybackX(paybackYears)} y1="24" y2="236" stroke={resultColors.energyYellow} strokeDasharray="5 5" />
-                <foreignObject x={Math.min(468, chart.paybackX(paybackYears) + 8)} y="28" width="142" height="36">
-                  <div className="rounded-full px-3 py-1 text-xs font-black shadow-sm" style={{ background: resultColors.softYellow, color: resultColors.corporateNavy }}>
-                    Amortisman: {paybackYears} yıl
-                  </div>
-                </foreignObject>
-              </g>
-            )}
+            <BreakEvenMarker paybackYears={paybackYears} paybackX={chart.paybackX} />
           </svg>
         </div>
-        <ChartHighlightCards
-          items={[
-            { label: "5. yıldaki net durum", value: currencyFormat(gains[0].value, currency), tone: financialTone(gains[0].value) },
-            { label: "İlk geri dönüş", value: paybackYears ? `${paybackYears} yıl` : "Geri dönüş yok", tone: !paybackYears || paybackYears > 15 ? "loss" : paybackYears <= 9 ? "profit" : "warning" },
-            { label: "25 yıllık toplam net kazanç", value: currencyFormat(final.value, currency), tone: financialTone(final.value) },
-            { label: "En güçlü kazanç artışı", value: getStrongestGainPeriod(gains), tone: "profit" }
-          ]}
-        />
+        <ProfitYearSummaryCards gains={gains} currency={currency} />
       </div>
       <p className="mt-5 text-sm leading-6 text-slate-600">
         Pozitif net kazançlar yeşil, negatif net sonuçlar mavi gösterilir. Hesap elektrik fiyatı artışı, bakım gideri ve panel üretim düşüşü varsayımlarını içerir.
@@ -841,7 +856,7 @@ function ProfitProjectionLineChart({ gains, currency, paybackYears }: { gains: P
   );
 }
 
-function ProfitTooltip({ point, currency }: { point: ProjectionPoint; currency: string }) {
+function ProfitProjectionTooltip({ point, currency }: { point: ProjectionPoint; currency: string }) {
   const netTone = financialTone(point.value);
   const netLabel = `${point.value >= 0 ? "+" : ""}${currencyFormat(point.value, currency)} ${point.value >= 0 ? "kâr" : "zarar"}`;
   return (
@@ -852,10 +867,55 @@ function ProfitTooltip({ point, currency }: { point: ProjectionPoint; currency: 
       <p>Toplam maliyet: <b>{currencyFormat(point.totalCost, currency)}</b></p>
       <p>Başlangıç yatırımı: <b>{currencyFormat(point.installationCost, currency)}</b></p>
       <p className="font-black" style={{ color: financialColor(point.value) }}>Net durum: {netLabel}</p>
-      <p className="font-bold" style={{ color: netTone === "profit" ? resultColors.profitGreen : resultColors.lossBlue }}>
+      <p className="font-bold" style={{ color: netTone === "profit" ? resultColors.profitGreen : resultColors.lossNavy }}>
         Durum: {point.paidBack ? "Sistem kendini amorti etmiş" : "Yatırım henüz geri dönmemiş"}
       </p>
     </div>
+  );
+}
+
+function ProfitYearSummaryCards({ gains, currency }: { gains: ProjectionPoint[]; currency: string }) {
+  return (
+    <aside className="grid content-start gap-3">
+      {gains.map((point) => {
+        const isProfit = point.value >= 0;
+        const style = getToneStyle(isProfit ? "profit" : "loss");
+        return (
+          <div key={point.year} className="rounded-lg border p-4 shadow-sm" style={{ background: style.background, borderColor: style.border }}>
+            <p className="text-xs font-black uppercase tracking-wide text-slate-500">{point.year} yıl</p>
+            <p className="mt-2 text-xl font-black leading-snug" style={{ color: style.color }}>
+              {point.value >= 0 ? "+" : ""}{currencyFormat(point.value, currency)}
+            </p>
+            <p className="mt-1 text-sm font-bold" style={{ color: style.color }}>
+              {isProfit ? "Sistem kâra geçti" : "Yatırım geri dönmedi"}
+            </p>
+          </div>
+        );
+      })}
+    </aside>
+  );
+}
+
+function BreakEvenMarker({ paybackYears, paybackX }: { paybackYears: number | null; paybackX: (year: number) => number }) {
+  if (!paybackYears || paybackYears > 25) {
+    return (
+      <foreignObject x="474" y="34" width="192" height="40">
+        <div className="rounded-full px-3 py-1 text-xs font-black shadow-sm" style={{ background: resultColors.lossNavySoft, color: resultColors.lossNavy }}>
+          25 yıl içinde geri dönüş yok
+        </div>
+      </foreignObject>
+    );
+  }
+  const x = paybackX(paybackYears);
+  return (
+    <g>
+      <line x1={x} x2={x} y1="32" y2="302" stroke={resultColors.breakEvenYellow} strokeDasharray="5 5" />
+      <foreignObject x={Math.min(520, x + 10)} y="34" width="158" height="40">
+        <div className="rounded-full px-3 py-1 text-xs font-black shadow-sm" style={{ background: resultColors.softYellow, color: resultColors.corporateNavy }}>
+          Amortisman: {paybackYears} yıl
+        </div>
+      </foreignObject>
+    </g>
   );
 }
 
@@ -1008,31 +1068,44 @@ function RecalculateButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function PackageCard({ pkg, currency, recommended, onLead }: { pkg: PackageResult; currency: string; recommended: boolean; onLead: () => void }) {
+function PanelPackageGrid({ packages, currency, openLead }: { packages: PackageResult[]; currency: string; openLead: (pkg: PackageResult) => void }) {
+  return (
+    <div className={`${motionClasses.staggerContainer} mt-8 grid items-stretch gap-6 md:grid-cols-2 xl:grid-cols-4`}>
+      {packages.map((pkg) => (
+        <PanelPackageCard key={pkg.id} pkg={pkg} currency={currency} recommended={pkg.id === "A"} onLead={() => openLead(pkg)} />
+      ))}
+    </div>
+  );
+}
+
+function PanelPackageCard({ pkg, currency, recommended, onLead }: { pkg: PackageResult; currency: string; recommended: boolean; onLead: () => void }) {
   const netTone = financialTone(pkg.netGain25Years);
   const paybackTone = !pkg.paybackYears || pkg.paybackYears > 15 ? "loss" : pkg.paybackYears <= 9 ? "profit" : "warning";
+  const copy = packageCopy[pkg.id];
   return (
-    <article className={`package-card group ${recommended ? "ring-2 ring-yellow-400" : ""}`}>
-      <PanelPackageVisual type={pkg.id} />
-      <div className="mt-5 flex items-center justify-between gap-3">
+    <article className={`package-card group flex h-full flex-col p-5 ${recommended ? "ring-2 ring-yellow-400" : ""}`}>
+      <section className="visual-section">
+        <PanelPackageVisual type={pkg.id} badge={copy.badge} />
+      </section>
+      <section className="content-section mt-5">
         <div>
           <h3 className="text-2xl font-black text-blue-950">{pkg.name}</h3>
-          <p className="mt-1 text-sm font-black text-yellow-600">{pkg.tag}</p>
+          <p className="mt-1 text-sm font-black text-yellow-600">{copy.tag}</p>
         </div>
-        {recommended && <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-black text-blue-950">Önerilen</span>}
-      </div>
-      <p className="mt-3 min-h-16 text-sm leading-6 text-slate-600">{pkg.description}</p>
-      <dl className="mt-5 grid gap-2 text-sm">
-        <Row label="Kullanılan alan" value={`${pkg.usedAreaSqm} m²`} />
-        <Row label="Kurulu güç" value={`${pkg.installedPowerKwp} kWp`} />
-        <Row label="Yıllık üretim" value={`${numberFormat(pkg.annualProductionKwh)} kWh`} />
-        <Row label="Yıllık tasarruf" value={currencyFormat(pkg.annualSavings, currency)} tone="profit" />
-        <Row label="Amortisman" value={pkg.paybackYears ? `${pkg.paybackYears} yıl` : "Geri dönüş yok"} tone={paybackTone} />
-        <Row label="25 yıllık net kazanç" value={currencyFormat(pkg.netGain25Years, currency)} tone={netTone} />
-      </dl>
-      <button className="btn-primary mt-5 w-full justify-center py-3" onClick={onLead}>
-        Bu panel için teklif al
-      </button>
+        <p className="mt-2 min-h-[48px] text-sm leading-6 text-slate-600">{copy.description}</p>
+      </section>
+      <section className="metrics-section mt-5 grid gap-3">
+        <PackageMetricRow label="Yıllık üretim" value={`${numberFormat(pkg.annualProductionKwh)} kWh/yıl`} />
+        <PackageMetricRow label="Yıllık tasarruf" value={`${currencyFormat(pkg.annualSavings, currency)}/yıl`} tone="profit" />
+        <PackageMetricRow label="Amortisman" value={pkg.paybackYears ? `${pkg.paybackYears} yıl` : "Geri dönüş yok"} tone={paybackTone} />
+        <PackageMetricRow label="25 yıllık net kazanç" value={`${currencyFormat(pkg.netGain25Years, currency)} net`} tone={netTone} />
+      </section>
+      <PackageDetailsAccordion pkg={pkg} currency={currency} />
+      <section className="action-section mt-auto pt-5">
+        <button className="btn-primary w-full justify-center py-3" onClick={onLead}>
+          Bu panel için teklif al
+        </button>
+      </section>
     </article>
   );
 }
@@ -1080,6 +1153,33 @@ function PackageComparisonChart({ packages, currency }: { packages: PackageResul
         })}
       </div>
     </ChartCard>
+  );
+}
+
+function PackageMetricRow({ label, value, tone }: { label: string; value: string; tone?: "profit" | "loss" | "warning" }) {
+  const color = tone === "profit" ? resultColors.profitGreen : tone === "loss" ? resultColors.lossNavy : tone === "warning" ? resultColors.warningOrange : resultColors.corporateNavy;
+  const bg = tone === "profit" ? resultColors.profitGreenSoft : tone === "loss" ? resultColors.lossNavySoft : tone === "warning" ? resultColors.warningOrangeSoft : resultColors.softBlue;
+  return (
+    <div className="rounded-lg px-3 py-2" style={{ background: bg }}>
+      <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 text-base font-black leading-tight" style={{ color }}>{value}</p>
+    </div>
+  );
+}
+
+function PackageDetailsAccordion({ pkg, currency }: { pkg: PackageResult; currency: string }) {
+  const risk = !pkg.paybackYears || pkg.paybackYears > 15 ? "Yüksek" : pkg.paybackYears <= 9 ? "Düşük" : "Orta";
+  return (
+    <details className="mt-4 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm">
+      <summary className="cursor-pointer font-black" style={{ color: resultColors.corporateNavy }}>Detayları gör</summary>
+      <dl className="mt-3 grid gap-2">
+        <Row label="Kullanılan alan" value={`${pkg.usedAreaSqm} m²`} />
+        <Row label="Kurulu güç" value={`${pkg.installedPowerKwp} kWp`} />
+        <Row label="CO₂ azaltımı" value={`${numberFormat(pkg.co2ReductionKg)} kg`} />
+        <Row label="Maliyet" value={currencyFormat(pkg.installationCost, currency)} />
+        <Row label="Risk seviyesi" value={risk} tone={risk === "Düşük" ? "profit" : risk === "Yüksek" ? "loss" : "warning"} />
+      </dl>
+    </details>
   );
 }
 
@@ -1189,10 +1289,13 @@ function QuestionCard({ title, description, children }: { title: string; descrip
   );
 }
 
-function ChartCard({ title, subtitle, children, className = "" }: { title: string; subtitle?: string; children: ReactNode; className?: string }) {
+function ChartCard({ title, subtitle, children, className = "", badge }: { title: string; subtitle?: string; children: ReactNode; className?: string; badge?: string }) {
   return (
     <section className={`rounded-lg bg-white p-5 shadow-soft ring-1 ring-blue-950/5 ${className}`}>
-      <h3 className="text-xl font-black text-blue-950">{title}</h3>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-xl font-black text-blue-950">{title}</h3>
+        {badge && <span className="rounded-full px-3 py-1 text-xs font-black" style={{ background: resultColors.softYellow, color: resultColors.corporateNavy }}>{badge}</span>}
+      </div>
       {subtitle && <p className="mt-2 text-sm leading-6 text-slate-600">{subtitle}</p>}
       {children}
     </section>
@@ -1216,7 +1319,7 @@ function Metric({
     tone === "profit"
       ? resultColors.profitGreen
       : tone === "loss"
-        ? resultColors.lossBlue
+        ? resultColors.lossNavy
         : tone === "warning"
           ? resultColors.warningOrange
           : tone === "navy"
@@ -1226,7 +1329,7 @@ function Metric({
     tone === "profit"
       ? resultColors.profitGreenSoft
       : tone === "loss"
-        ? resultColors.lossBlueSoft
+        ? resultColors.lossNavySoft
         : tone === "warning"
           ? resultColors.warningOrangeSoft
           : tone === "navy"
@@ -1262,7 +1365,7 @@ function InfoBand({ children }: { children: ReactNode }) {
 }
 
 function Row({ label, value, tone }: { label: string; value: string; tone?: "profit" | "loss" | "warning" }) {
-  const color = tone === "profit" ? resultColors.profitGreen : tone === "loss" ? resultColors.lossBlue : tone === "warning" ? resultColors.warningOrange : resultColors.corporateNavy;
+  const color = tone === "profit" ? resultColors.profitGreen : tone === "loss" ? resultColors.lossNavy : tone === "warning" ? resultColors.warningOrange : resultColors.corporateNavy;
   return (
     <div className="flex justify-between gap-3 border-b border-slate-100 py-2">
       <dt className="text-slate-500">{label}</dt>
@@ -1271,7 +1374,7 @@ function Row({ label, value, tone }: { label: string; value: string; tone?: "pro
   );
 }
 
-function PanelPackageVisual({ type }: { type: "A" | "B" | "C" | "D" }) {
+function PanelPackageVisual({ type, badge }: { type: "A" | "B" | "C" | "D"; badge: string }) {
   const config = {
     A: { bg: "from-yellow-300 via-blue-700 to-blue-950", label: "Panel A", caption: "Kompakt balkon", grid: "grid-cols-3", scale: "w-36" },
     B: { bg: "from-blue-950 via-blue-900 to-yellow-400", label: "Panel B", caption: "Premium performans", grid: "grid-cols-5", scale: "w-52" },
@@ -1279,20 +1382,20 @@ function PanelPackageVisual({ type }: { type: "A" | "B" | "C" | "D" }) {
     D: { bg: "from-sky-100 via-blue-500 to-yellow-300", label: "Panel D", caption: "Mini başlangıç", grid: "grid-cols-2", scale: "w-28" }
   }[type];
   return (
-    <div className={`panel-visual relative h-36 overflow-hidden rounded-lg bg-gradient-to-br ${config.bg} p-4 transition duration-300`}>
-      <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-black" style={{ color: resultColors.corporateNavy }}>{config.label}</div>
+    <div className={`panel-visual relative h-[160px] overflow-hidden rounded-lg bg-gradient-to-br ${config.bg} p-4 transition duration-300 md:h-[200px]`}>
+      <div className="absolute left-4 top-4 z-10 rounded-full bg-white/95 px-3 py-1 text-xs font-black shadow-sm backdrop-blur" style={{ color: resultColors.corporateNavy }}>{badge}</div>
       <div className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-yellow-300 text-blue-950 shadow-yellow">
         <Sun size={21} />
       </div>
       {type === "A" && <div className="absolute bottom-3 left-5 h-16 w-24 rounded-t-lg bg-white/80" />}
       {type === "C" && <div className="absolute bottom-2 left-8 h-14 w-32 rotate-[-4deg] bg-white/75 [clip-path:polygon(50%_0,100%_45%,100%_100%,0_100%,0_45%)]" />}
       {type === "D" && <div className="absolute bottom-3 left-5 h-10 w-14 rounded border-2 border-white/75" />}
-      <div className={`absolute bottom-8 left-7 grid ${config.scale} rotate-[-7deg] ${config.grid} gap-1 rounded-lg bg-blue-950/82 p-2 shadow-2xl`}>
+      <div className={`absolute bottom-11 left-7 grid ${config.scale} rotate-[-7deg] ${config.grid} gap-1 rounded-lg bg-blue-950/82 p-2 shadow-2xl`}>
         {Array.from({ length: type === "B" ? 15 : type === "D" ? 4 : 12 }).map((_, index) => (
           <div key={index} className="h-5 rounded bg-sky-300/75 ring-1 ring-white/20" />
         ))}
       </div>
-      <div className="absolute bottom-3 left-4 rounded-full bg-white/20 px-3 py-1 text-xs font-black text-white">{config.caption}</div>
+      <div className="absolute bottom-3 left-4 rounded-full bg-blue-950/55 px-3 py-1 text-xs font-black text-white backdrop-blur">{config.caption}</div>
       <div className="pointer-events-none absolute inset-0 translate-x-[-110%] skew-x-[-18deg] bg-white/18 transition duration-700 group-hover:translate-x-[120%]" />
     </div>
   );
@@ -1343,7 +1446,7 @@ function getToneStyle(tone: "profit" | "loss" | "warning" | "energy" | "navy") {
     return { color: resultColors.profitGreen, background: resultColors.profitGreenSoft, border: resultColors.profitGreenSoft };
   }
   if (tone === "loss") {
-    return { color: resultColors.lossBlue, background: resultColors.lossBlueSoft, border: resultColors.lossBlueSoft };
+    return { color: resultColors.lossNavy, background: resultColors.lossNavySoft, border: resultColors.lossNavySoft };
   }
   if (tone === "warning") {
     return { color: resultColors.warningOrange, background: resultColors.warningOrangeSoft, border: resultColors.warningOrangeSoft };
@@ -1355,11 +1458,11 @@ function getToneStyle(tone: "profit" | "loss" | "warning" | "energy" | "navy") {
 }
 
 function getSmoothLineChart(gains: ProjectionPoint[]) {
-  const width = 620;
-  const height = 280;
-  const paddingX = 44;
-  const paddingTop = 24;
-  const paddingBottom = 44;
+  const width = 720;
+  const height = 360;
+  const paddingX = 54;
+  const paddingTop = 32;
+  const paddingBottom = 62;
   const values = gains.map((item) => item.value);
   const min = Math.min(...values, 0);
   const max = Math.max(...values, 1);

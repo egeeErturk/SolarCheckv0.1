@@ -1,8 +1,12 @@
 export const resultColors = {
   profitGreen: "#16A34A",
+  profitGreenStrong: "#22C55E",
   profitGreenSoft: "#DCFCE7",
   lossBlue: "#2563EB",
   lossBlueSoft: "#DBEAFE",
+  lossNavy: "#003B71",
+  lossNavySoft: "#EAF4FF",
+  breakEvenYellow: "#FDB913",
   energyYellow: "#FDB913",
   productionYellow: "#FACC15",
   corporateNavy: "#003B71",
@@ -31,9 +35,9 @@ export function financialTone(value: number): "profit" | "loss" {
 }
 
 export function financialColor(value: number): string {
-  return value >= 0 ? resultColors.profitGreen : resultColors.lossBlue;
+  return value >= 0 ? resultColors.profitGreenStrong : resultColors.lossNavy;
 }
 
 export function financialSoftColor(value: number): string {
-  return value >= 0 ? resultColors.profitGreenSoft : resultColors.lossBlueSoft;
+  return value >= 0 ? resultColors.profitGreenSoft : resultColors.lossNavySoft;
 }
