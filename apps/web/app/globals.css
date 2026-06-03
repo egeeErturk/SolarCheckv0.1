@@ -1,0 +1,403 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  color-scheme: light;
+  --profit-green: #16A34A;
+  --profit-green-soft: #DCFCE7;
+  --loss-blue: #2563EB;
+  --loss-blue-soft: #DBEAFE;
+  --energy-yellow: #FDB913;
+  --corporate-navy: #003B71;
+  --warning-orange: #F97316;
+  --soft-blue: #EAF4FF;
+  --soft-yellow: #FFF7D6;
+  --background: #F8FAFC;
+  --card: #FFFFFF;
+  --text-dark: #0F172A;
+  --text-muted: #64748B;
+  --border-subtle: #DBE4EF;
+  --border-input: #E2E8F0;
+  --energy-yellow-light: #FFD86A;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text-dark);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.leaflet-container {
+  height: 100%;
+  min-height: 420px;
+  width: 100%;
+  z-index: 1;
+}
+
+.energy-gradient {
+  background: linear-gradient(135deg, var(--energy-yellow) 0%, var(--energy-yellow-light) 45%, var(--warning-orange) 100%);
+}
+
+.bg-solar-page {
+  background:
+    radial-gradient(circle at top left, rgba(253, 185, 19, 0.11), transparent 34rem),
+    radial-gradient(circle at top right, rgba(0, 59, 113, 0.09), transparent 30rem),
+    linear-gradient(180deg, var(--card) 0%, var(--background) 100%);
+}
+
+.bg-solar-gradient {
+  background: linear-gradient(135deg, var(--energy-yellow) 0%, var(--energy-yellow-light) 48%, var(--corporate-navy) 100%);
+}
+
+.input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-input);
+  background: var(--card);
+  padding: 0.8rem 0.9rem;
+  outline: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.input:focus {
+  border-color: var(--energy-yellow);
+  box-shadow: 0 0 0 3px rgba(253, 185, 19, 0.18);
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.btn-primary,
+.btn-light,
+.btn-ghost,
+.btn-outline-light,
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  font-weight: 900;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, border-color 180ms ease;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--energy-yellow) 0%, var(--energy-yellow-light) 100%);
+  color: var(--corporate-navy);
+  box-shadow: 0 16px 34px rgba(253, 185, 19, 0.24);
+  padding: 0.75rem 1rem;
+}
+
+.btn-primary:hover,
+.btn-light:hover,
+.btn-ghost:hover,
+.btn-outline-light:hover,
+.btn-icon:hover,
+.option-card:hover,
+.package-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 46px rgba(0, 59, 113, 0.14);
+}
+
+.btn-primary:active,
+.btn-light:active,
+.btn-ghost:active,
+.btn-outline-light:active,
+.btn-icon:active,
+.option-card:active,
+.package-card:active {
+  transform: scale(0.98);
+}
+
+.btn-light {
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--corporate-navy);
+  padding: 0.75rem 1rem;
+}
+
+.btn-ghost {
+  border: 1px solid rgba(0, 59, 113, 0.14);
+  background: var(--card);
+  color: var(--corporate-navy);
+  padding: 0.65rem 0.9rem;
+}
+
+.btn-outline-light {
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  background: transparent;
+  color: var(--card);
+  padding: 0.75rem 1rem;
+}
+
+.btn-icon {
+  width: 3rem;
+  min-width: 3rem;
+  height: 3rem;
+}
+
+.option-card {
+  min-height: 9.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--card);
+  padding: 1rem;
+  text-align: left;
+  color: var(--corporate-navy);
+  box-shadow: 0 10px 28px rgba(0, 59, 113, 0.05);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.option-card-selected {
+  border-color: var(--energy-yellow);
+  background: linear-gradient(135deg, rgba(253, 185, 19, 0.2), rgba(0, 59, 113, 0.06));
+  box-shadow: 0 16px 36px rgba(0, 59, 113, 0.11);
+}
+
+.package-card {
+  border-radius: 0.5rem;
+  background: var(--card);
+  padding: 1.25rem;
+  box-shadow: 0 18px 45px rgba(0, 59, 113, 0.1);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.package-card:hover {
+  box-shadow: 0 24px 60px rgba(0, 59, 113, 0.16);
+}
+
+.package-card:hover .panel-visual {
+  transform: scale(1.035);
+}
+
+.chart-item {
+  position: relative;
+}
+
+.chart-tooltip {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.65rem);
+  z-index: 20;
+  min-width: max-content;
+  transform: translateX(-50%) translateY(6px);
+  border-radius: 0.5rem;
+  background: var(--card);
+  padding: 0.55rem 0.7rem;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+  opacity: 0;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.chart-item:hover .chart-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.chart-bar {
+  transform-origin: bottom;
+  animation: bar-grow 980ms ease-out both;
+  transition: filter 160ms ease, transform 160ms ease, opacity 160ms ease;
+}
+
+.chart-item:hover .chart-bar {
+  filter: saturate(1.25) brightness(1.05);
+  transform: scaleY(1.03);
+}
+
+.chart-dot {
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.chart-item:hover .chart-dot {
+  transform: scale(1.28);
+  box-shadow: 0 0 0 6px rgba(253, 185, 19, 0.18);
+}
+
+.profit-line-path {
+  stroke-dasharray: 900;
+  stroke-dashoffset: 900;
+  animation: draw-line 1250ms ease-out forwards;
+}
+
+.profit-area-path {
+  opacity: 0;
+  animation: fade-area 900ms ease-out 420ms forwards;
+}
+
+.chart-svg-point {
+  cursor: pointer;
+}
+
+.chart-svg-point circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.chart-svg-point:hover circle {
+  transform: scale(1.35);
+  filter: drop-shadow(0 8px 10px rgba(15, 23, 42, 0.18));
+}
+
+.chart-svg-point:hover .chart-svg-tooltip {
+  opacity: 1;
+}
+
+.profit-reference-line {
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.chart-svg-point:hover .profit-reference-line {
+  opacity: 1;
+}
+
+.finance-profit {
+  color: var(--profit-green);
+}
+
+.finance-loss {
+  color: var(--loss-blue);
+}
+
+.finance-profit-bg {
+  background: var(--profit-green-soft);
+}
+
+.finance-loss-bg {
+  background: var(--loss-blue-soft);
+}
+
+.analysis-panel {
+  border: 1px solid rgba(253, 185, 19, 0.28);
+  background: linear-gradient(135deg, var(--card), var(--soft-yellow));
+}
+
+.energy-spinner {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  border: 3px solid rgba(253, 185, 19, 0.25);
+  border-top-color: var(--energy-yellow);
+  animation: spin 900ms linear infinite;
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes soft-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes grow {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0.05);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes chart-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes draw-line {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-area {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-enter {
+  animation: enter 420ms ease both;
+}
+
+.animate-soft-pop {
+  animation: soft-pop 520ms ease both;
+}
+
+.animate-grow {
+  animation: grow 520ms ease both;
+}
+
+.animate-chart-reveal {
+  animation: chart-reveal 900ms ease-out both;
+}
+
+.animate-stagger > * {
+  animation: enter 450ms ease both;
+}
+
+.animate-stagger > *:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.animate-stagger > *:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.animate-stagger > *:nth-child(4) {
+  animation-delay: 240ms;
+}
+
+.animate-stagger > *:nth-child(5) {
+  animation-delay: 320ms;
+}
+
+.animate-stagger > *:nth-child(6) {
+  animation-delay: 400ms;
+}
