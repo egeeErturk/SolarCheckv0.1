@@ -922,7 +922,7 @@ function ProfitProjectionTooltip({ point, currency }: { point: ProjectionPoint; 
       <p>Başlangıç yatırımı: <b>{currencyFormat(point.installationCost, currency)}</b></p>
       <p className="font-black" style={{ color: financialColor(point.value) }}>Net durum: {netLabel}</p>
       <p className="font-bold" style={{ color: netTone === "profit" ? resultColors.profitGreen : resultColors.lossNavy }}>
-        Durum: {point.paidBack ? "Sistem kendini amorti etmiş" : "Yatırım henüz geri dönmemiş"}
+        {point.value >= 0 ? "Potansiyel kâr miktarı" : "Potansiyel zarar miktarı"}
       </p>
     </div>
   );
@@ -941,7 +941,7 @@ function ProfitYearSummaryCards({ gains, currency }: { gains: ProjectionPoint[];
               {point.value >= 0 ? "+" : ""}{currencyFormat(point.value, currency)}
             </p>
             <p className="mt-1 text-sm font-bold" style={{ color: style.color }}>
-              {isProfit ? "Sistem kâra geçti" : "Yatırım geri dönmedi"}
+              {isProfit ? "Potansiyel kâr miktarı" : "Potansiyel zarar miktarı"}
             </p>
           </div>
         );
