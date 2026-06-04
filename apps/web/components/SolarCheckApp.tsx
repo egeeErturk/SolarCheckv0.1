@@ -173,6 +173,8 @@ export default function SolarCheckApp() {
   const [monthlyConsumption, setMonthlyConsumption] = useState("250");
   const [monthlyBill, setMonthlyBill] = useState("");
   const [direction, setDirection] = useState<RoofDirection>("south");
+  const [roofTilt, setRoofTilt] = useState("30");
+  const [roofTiltError, setRoofTiltError] = useState("");
   const [shadeObstacle, setShadeObstacle] = useState<ShadeObstacle>("open");
   const [daytimeConsumption] = useState<DaytimeConsumption>("partial");
   const [result, setResult] = useState<SolarPotentialResult | null>(null);
@@ -216,6 +218,12 @@ export default function SolarCheckApp() {
   }
 
   async function calculate() {
+    const roofTiltValue = Number(roofTilt);
+    if (!Number.isFinite(roofTiltValue) || roofTiltValue < 0 || roofTiltValue > 90) {
+      setRoofTiltError("Çatı eğimi 0° ile 90° arasında olmalı.");
+      return;
+    }
+    setRoofTiltError("");
     setLoading(true);
     const consumption = Number(monthlyConsumption);
     const bill = Number(monthlyBill);
@@ -225,6 +233,7 @@ export default function SolarCheckApp() {
       usageType,
       direction,
       slope: inferredSlope,
+      roofTilt: roofTiltValue,
       shadeObstacle,
       monthlyConsumptionKwh: consumption > 0 ? consumption : undefined,
       monthlyBillAmount: consumption > 0 ? undefined : bill > 0 ? bill : undefined,
@@ -295,6 +304,9 @@ export default function SolarCheckApp() {
         <SolarDetailsPage
           direction={direction}
           setDirection={setDirection}
+          roofTilt={roofTilt}
+          setRoofTilt={setRoofTilt}
+          roofTiltError={roofTiltError}
           shadeObstacle={shadeObstacle}
           setShadeObstacle={setShadeObstacle}
           loading={loading}
@@ -424,11 +436,14 @@ function LandingPage({ onStart, onDiscovery }: { onStart: () => void; onDiscover
 
 function FlowEnergyBrand() {
   return (
-    <div className="absolute right-4 top-5 z-10 inline-flex items-center gap-2 rounded-full bg-blue-950/55 px-4 py-2 text-sm font-black text-white shadow-soft backdrop-blur md:right-8">
-      <span className="grid h-7 w-7 place-items-center rounded-full" style={{ background: resultColors.energyYellow, color: resultColors.corporateNavy }}>
-        <Zap size={15} />
+    <div className="flow-energy-mark absolute inset-x-4 top-6 z-10 md:inset-x-auto md:right-8 md:top-28">
+      <span className="sr-only">FLOW ENERGY</span>
+      <span aria-hidden="true" className="block text-center font-black uppercase italic leading-none text-white md:text-right">
+        FLOW
       </span>
-      <span className="tracking-wide">Flow Energy</span>
+      <span aria-hidden="true" className="block text-center font-black uppercase italic leading-none text-white md:text-right">
+        ENERGY
+      </span>
     </div>
   );
 }
@@ -627,6 +642,9 @@ function UsagePage(props: {
 function SolarDetailsPage(props: {
   direction: RoofDirection;
   setDirection: (value: RoofDirection) => void;
+  roofTilt: string;
+  setRoofTilt: (value: string) => void;
+  roofTiltError: string;
   shadeObstacle: ShadeObstacle;
   setShadeObstacle: (value: ShadeObstacle) => void;
   loading: boolean;
@@ -644,6 +662,30 @@ function SolarDetailsPage(props: {
       <div className="mt-7 grid gap-6">
         <QuestionCard title="Cephe yönü" description="Bilmiyorsanız güvenli varsayımla hesaplama yapılır.">
           <DirectionGrid value={props.direction} onChange={props.setDirection} />
+        </QuestionCard>
+        <QuestionCard
+          title="Çatı Eğimi (°)"
+          description="Panel yüzeyinin yataya göre eğimini derece cinsinden girin. Bilmiyorsanız 30° güvenli bir başlangıç varsayımıdır."
+        >
+          <div className="max-w-sm">
+            <input
+              type="number"
+              min={0}
+              max={90}
+              step={1}
+              value={props.roofTilt}
+              onChange={(event) => props.setRoofTilt(event.target.value)}
+              className={`input text-lg font-black ${props.roofTiltError ? "border-blue-700 bg-blue-50" : ""}`}
+              aria-invalid={!!props.roofTiltError}
+              aria-describedby="roof-tilt-help"
+            />
+            <p id="roof-tilt-help" className="hint mt-2">Geçerli aralık 0° ile 90° arasındadır.</p>
+            {props.roofTiltError && (
+              <p className="mt-2 rounded-lg px-3 py-2 text-sm font-black" style={{ background: resultColors.lossNavySoft, color: resultColors.lossNavy }}>
+                {props.roofTiltError}
+              </p>
+            )}
+          </div>
         </QuestionCard>
         <QuestionCard
           title="Balkonunuzun veya çatınızın önünde yılın büyük bölümünde güneşi kapatan bir engel var mı?"
@@ -704,7 +746,7 @@ function ResultsPage({
   const peak = monthly.reduce((best, item) => (item.value > best.value ? item : best), monthly[0]);
   const low = monthly.reduce((worst, item) => (item.value < worst.value ? item : worst), monthly[0]);
   const gains = getLongTermGains(result.recommendedPackage);
-  const losses = getLosses(direction, shadeObstacle);
+  const losses = getLosses(direction, shadeObstacle, result.tiltLossPercent);
   const net25 = gains[gains.length - 1].value;
   const payback = result.recommendedPackage.paybackYears;
   const paybackTone = !payback || payback > 15 ? "loss" : payback <= 9 ? "profit" : "warning";
@@ -746,7 +788,7 @@ function ResultsPage({
         Kış aylarında güneş açısı ve gün uzunluğu nedeniyle üretim düşebilir.
       </InfoBand>
 
-      <div className="mt-8">
+      <div className="mt-10 -mx-4 px-4 md:-mx-6 md:px-6">
         <ProfitProjectionLineChart gains={gains} currency={currency} paybackYears={result.recommendedPackage.paybackYears} />
       </div>
       <div className="mt-6">
@@ -771,6 +813,8 @@ function ResultsPage({
         <ul className="mt-4 list-inside list-disc text-sm leading-7 text-slate-600">
           <li>Elektrik fiyatı: {result.electricityPrice.label} ({result.electricityPrice.pricePerKwh} {currency}/kWh)</li>
           <li>Radyasyon verisi: {result.radiationSource}</li>
+          <li>Çatı eğimi: {result.roofTiltDegrees}°</li>
+          <li>Panel yüzeyi ışınım katsayısı: {result.roofTiltFactor} (eğim kaynaklı kayıp: %{result.tiltLossPercent})</li>
           <li>Eğim: {slopeLabels[inferredSlope]}</li>
           <li>Panel üretimi her yıl %0.5 azalır; bakım maliyeti ve elektrik fiyatı yıllara göre artar.</li>
           {result.notes.map((note) => <li key={note}>{note}</li>)}
@@ -804,14 +848,14 @@ function ProfitProjectionLineChart({ gains, currency, paybackYears }: { gains: P
   const zeroStop = Math.max(0, Math.min(100, (chart.zeroY / 360) * 100));
   return (
     <ChartCard
-      title="25 Yıla Kadar Kâr/Zarar Projeksiyonu"
+      title="25 Yıllık Kâr / Zarar Projeksiyonu"
       subtitle="Bu grafik, sistemin yıllar içinde ilk yatırım maliyetini ne zaman geri kazandırabileceğini ve uzun vadede ne kadar net kazanç sağlayabileceğini gösterir."
       badge="İnteraktif"
       className="profit-chart-card"
     >
-      <div className={`${motionClasses.chartReveal} mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]`}>
-        <div className="relative min-h-[360px] rounded-lg border border-slate-100 bg-slate-50/70 p-4 md:min-h-[420px]">
-          <svg className="h-[320px] w-full overflow-visible md:h-[380px]" viewBox="0 0 720 360" role="img" aria-label="Uzun vadeli net kazanç çizgi grafiği">
+      <div className={`${motionClasses.chartReveal} mt-6 grid gap-6 2xl:grid-cols-[minmax(0,1fr)_340px]`}>
+        <div className="relative min-h-[380px] rounded-lg border border-slate-100 bg-slate-50/70 p-4 md:min-h-[500px]">
+          <svg className="h-[340px] w-full overflow-visible md:h-[460px]" viewBox="0 0 720 360" role="img" aria-label="Uzun vadeli net kazanç çizgi grafiği">
             <defs>
               <linearGradient id="profit-area" x1="0" x2="0" y1="0" y2="1">
                 <stop offset="0%" stopColor={lineColor} stopOpacity="0.24" />
@@ -1503,10 +1547,11 @@ function getStrongestGainPeriod(gains: ProjectionPoint[]) {
   return best.label;
 }
 
-function getLosses(direction: RoofDirection, shadeObstacle: ShadeObstacle) {
+function getLosses(direction: RoofDirection, shadeObstacle: ShadeObstacle, roofTiltLossPercent = 0) {
   const items = [
     { label: "Gölge kaybı", value: shadeLoss[shadeObstacle] },
     { label: "Cephe/yön kaybı", value: directionLoss[direction] },
+    { label: "Çatı eğimi kaybı", value: roofTiltLossPercent },
     { label: "Sıcaklık kaybı", value: 6 },
     { label: "İnverter kaybı", value: 4 },
     { label: "Kablo/bağlantı kaybı", value: 2 },

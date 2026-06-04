@@ -47,6 +47,7 @@ export default function App() {
   const [monthlyConsumption, setMonthlyConsumption] = useState("250");
   const [direction, setDirection] = useState<RoofDirection>("south");
   const [slope, setSlope] = useState<RoofSlope>("medium");
+  const [roofTilt, setRoofTilt] = useState("30");
   const [shadeObstacle, setShadeObstacle] = useState<ShadeObstacle>("open");
   const [result, setResult] = useState<SolarPotentialResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -89,6 +90,7 @@ export default function App() {
       usageType,
       direction,
       slope,
+      roofTilt: Math.max(0, Math.min(90, Number(roofTilt) || 30)),
       shadeObstacle,
       monthlyConsumptionKwh: Number(monthlyConsumption) || 250,
       daytimeConsumption: "partial"
@@ -138,6 +140,8 @@ export default function App() {
           setDirection={setDirection}
           slope={slope}
           setSlope={setSlope}
+          roofTilt={roofTilt}
+          setRoofTilt={setRoofTilt}
           shadeObstacle={shadeObstacle}
           setShadeObstacle={setShadeObstacle}
           loading={loading}
@@ -235,6 +239,8 @@ function RoofDirectionScreen(props: {
   setDirection: (value: RoofDirection) => void;
   slope: RoofSlope;
   setSlope: (value: RoofSlope) => void;
+  roofTilt: string;
+  setRoofTilt: (value: string) => void;
   shadeObstacle: ShadeObstacle;
   setShadeObstacle: (value: ShadeObstacle) => void;
   loading: boolean;
@@ -261,6 +267,15 @@ function RoofDirectionScreen(props: {
         ["steep", "Dik"],
         ["unknown", "Bilmiyorum"]
       ]} />
+      <Text style={styles.label}>Çatı Eğimi (°)</Text>
+      <TextInput
+        style={styles.input}
+        keyboardType="numeric"
+        value={props.roofTilt}
+        onChangeText={props.setRoofTilt}
+        placeholder="0-90"
+      />
+      <Text style={styles.caption}>0° ile 90° arasında bir değer girin. Bilmiyorsanız 30° kullanabilirsiniz.</Text>
       <Text style={styles.label}>Yılın büyük bölümünde güneşi kapatan engel var mı?</Text>
       <OptionRow value={props.shadeObstacle} onChange={props.setShadeObstacle} options={[
         ["open", "Açık alan"],

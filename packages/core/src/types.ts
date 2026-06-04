@@ -35,6 +35,7 @@ export interface SolarCalculationInput {
   usageType: UsageType;
   direction: RoofDirection;
   slope: RoofSlope;
+  roofTilt: number;
   shadeObstacle: ShadeObstacle;
   monthlyConsumptionKwh?: number;
   monthlyBillAmount?: number;
@@ -89,6 +90,9 @@ export interface PackageResult extends PackageAssumption {
 export interface SolarPotentialResult {
   suitabilityScore: number;
   annualRadiationKwhPerSqm: number;
+  roofTiltDegrees: number;
+  roofTiltFactor: number;
+  tiltLossPercent: number;
   radiationSource: SolarData["source"];
   shadeSource: ShadeSource;
   estimatedMonthlyConsumptionKwh: number;

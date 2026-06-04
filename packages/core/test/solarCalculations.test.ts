@@ -9,6 +9,7 @@ const baseInput: SolarCalculationInput = {
   usageType: "balcony",
   direction: "south",
   slope: "medium",
+  roofTilt: 30,
   shadeObstacle: "open",
   monthlyConsumptionKwh: 250,
   daytimeConsumption: "partial"

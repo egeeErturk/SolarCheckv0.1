@@ -56,6 +56,28 @@ body {
   background: linear-gradient(135deg, var(--energy-yellow) 0%, var(--energy-yellow-light) 48%, var(--corporate-navy) 100%);
 }
 
+.flow-energy-mark {
+  animation: flow-energy-enter 820ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  filter: drop-shadow(0 18px 38px rgba(0, 18, 48, 0.34));
+  letter-spacing: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(28px) skewX(-10deg);
+}
+
+.flow-energy-mark span:not(.sr-only) {
+  font-size: clamp(3.5rem, 16vw, 9.5rem);
+  text-shadow:
+    0 2px 0 rgba(253, 185, 19, 0.34),
+    0 18px 42px rgba(0, 18, 48, 0.42);
+}
+
+@media (min-width: 768px) {
+  .flow-energy-mark span:not(.sr-only) {
+    font-size: clamp(5rem, 9vw, 10.5rem);
+  }
+}
+
 .input {
   width: 100%;
   border-radius: 0.5rem;
@@ -359,6 +381,17 @@ body {
 @keyframes draw-line {
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+@keyframes flow-energy-enter {
+  from {
+    opacity: 0;
+    transform: translateX(58px) translateY(-10px) skewX(-13deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0) skewX(-10deg);
   }
 }
 
