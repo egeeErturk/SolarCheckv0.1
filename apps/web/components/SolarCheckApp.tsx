@@ -360,10 +360,8 @@ function TopBar({ step, goBack }: { step: Step; goBack: () => void }) {
   return (
     <header className="sticky top-0 z-30 border-b border-blue-950/10 bg-white/88 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-solar-gradient text-blue-950 shadow-yellow">
-            <Sun size={21} />
-          </div>
+        <div className="flex min-w-0 items-center gap-3">
+          <FlowEnergyLogo className="header-flow-logo shrink-0" />
           <div>
             <p className="text-lg font-black text-blue-950">SolarCheck</p>
             <p className="text-xs font-semibold text-blue-900/60">Güneş potansiyeli ve teklif ön analizi</p>
@@ -402,7 +400,7 @@ function LandingPage({ onStart, onDiscovery }: { onStart: () => void; onDiscover
         />
         <div className="hero-grid-bg absolute inset-0" />
       </div>
-      <FlowEnergyLogo className="absolute right-4 top-4 z-20 sm:right-6 md:right-10 md:top-8" />
+      <FlowEnergyLogo className="hero-corner-logo absolute right-4 top-4 z-20 sm:right-6 md:right-10 md:top-8" />
       <div className="relative mx-auto grid min-h-[82vh] max-w-7xl items-center gap-10 px-4 pb-14 pt-28 sm:px-6 md:grid-cols-[minmax(0,0.92fr)_minmax(320px,1fr)] md:pb-20 md:pt-24 lg:gap-14">
         <div className="hero-copy max-w-3xl animate-enter text-center text-white md:text-left">
           <h1 className="text-4xl font-black leading-tight md:text-6xl">Güneş yatırımını dakikalar içinde netleştir.</h1>
