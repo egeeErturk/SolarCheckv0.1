@@ -146,6 +146,7 @@ const packageCopy: Record<"A" | "B" | "C" | "D", { tag: string; badge: string; d
 const monthFactors = [0.055, 0.066, 0.087, 0.098, 0.108, 0.116, 0.12, 0.112, 0.093, 0.077, 0.055, 0.041];
 const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 const projectionYears = [5, 10, 15, 20, 25];
+const flowLogoSrc = "/flow-energy-logo.jpeg";
 
 const currencyFormat = (value: number, currency: string) =>
   new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 0, style: "currency", currency }).format(value);
@@ -392,31 +393,29 @@ function TopBar({ step, goBack }: { step: Step; goBack: () => void }) {
 
 function LandingPage({ onStart, onDiscovery }: { onStart: () => void; onDiscovery: () => void }) {
   return (
-    <section className="relative isolate overflow-hidden bg-slate-50">
+    <section className="hero-shell relative isolate overflow-hidden">
       <div className="absolute inset-0">
         <img
-          className="h-full w-full object-cover"
+          className="hidden h-full w-full object-cover"
           src="https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1800&q=85"
           alt="Güneş paneli kurulumu"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-950/95 via-blue-950/82 to-white/35" />
-        <div className="absolute inset-y-0 left-0 w-full bg-[linear-gradient(90deg,rgba(0,59,113,0.86)_0%,rgba(0,59,113,0.62)_46%,rgba(248,250,252,0.08)_100%)]" />
+        <div className="hero-grid-bg absolute inset-0" />
       </div>
-      <FlowEnergyBrand />
-      <div className="relative mx-auto grid min-h-[78vh] max-w-7xl content-center px-4 py-16">
-        <div className="max-w-3xl animate-enter text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.28)]">
-          <h1 className="text-4xl font-black leading-tight md:text-6xl">25 yıla kadar güneşten sağlayabileceğiniz kazancı hesaplayın.</h1>
+      <FlowEnergyLogo className="absolute right-4 top-4 z-20 sm:right-6 md:right-10 md:top-8" />
+      <div className="relative mx-auto grid min-h-[82vh] max-w-7xl items-center gap-10 px-4 pb-14 pt-28 sm:px-6 md:grid-cols-[minmax(0,0.92fr)_minmax(320px,1fr)] md:pb-20 md:pt-24 lg:gap-14">
+        <div className="hero-copy max-w-3xl animate-enter text-center text-white md:text-left">
+          <h1 className="text-4xl font-black leading-tight md:text-6xl">Güneş yatırımını dakikalar içinde netleştir.</h1>
           <p className="mt-4 inline-flex rounded-full bg-white/12 px-4 py-2 text-sm font-black text-white/90 backdrop-blur">
-            Ön fizibilite • Paket karşılaştırma • Uzun vadeli kazanç analizi
+            Solar fizibilite • Akıllı paket analizi • Uzun vadeli kâr projeksiyonu
           </p>
           <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/92 md:text-xl">
-            Konumunuzu, kullanılabilir alanınızı ve elektrik tüketiminizi girin; SolarCheck size üretim,
-            tasarruf ve en uygun panel paketini birkaç adımda göstersin.
+            Konum, çatı yönü, eğim, gölge ve tüketim verilerini birleştirip üretim, tasarruf ve uzun vadeli kâr projeksiyonunu hesaplayan premium enerji ön analiz deneyimi.
           </p>
           <p className="mt-4 max-w-xl text-base font-bold text-yellow-300">
-            Balkonun veya çatının güneş potansiyelini hesapla.
+            Flow Energy marka diliyle uyumlu, hızlı ve güven veren solar karar ekranı.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center md:justify-start">
             <button className="btn-primary px-6 py-4 text-base" onClick={onStart}>
               Hemen Hesapla <ChevronRight size={18} />
             </button>
@@ -428,20 +427,31 @@ function LandingPage({ onStart, onDiscovery }: { onStart: () => void; onDiscover
             Sonuçlar ön fizibilite amaçlıdır. Kesin teklif için uzman keşfi önerilir.
           </p>
         </div>
+        <div className="hero-brand-panel relative min-h-[260px] md:min-h-[520px]">
+          <FlowEnergyBrand />
+        </div>
       </div>
       <HowItWorksSection compact />
     </section>
   );
 }
 
+function FlowEnergyLogo({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flow-logo-card ${className}`}>
+      <img src={flowLogoSrc} alt="Flow Energy logosu" />
+    </div>
+  );
+}
+
 function FlowEnergyBrand() {
   return (
-    <div className="flow-energy-mark absolute inset-x-4 top-6 z-10 md:inset-x-auto md:right-8 md:top-28">
+    <div className="flow-energy-mark">
       <span className="sr-only">FLOW ENERGY</span>
-      <span aria-hidden="true" className="block text-center font-black uppercase italic leading-none text-white md:text-right">
+      <span aria-hidden="true" className="flow-word flow-word-main block text-center font-black uppercase italic leading-none text-white md:text-right">
         FLOW
       </span>
-      <span aria-hidden="true" className="block text-center font-black uppercase italic leading-none text-white md:text-right">
+      <span aria-hidden="true" className="flow-word flow-word-sub block text-center font-black uppercase italic leading-none md:text-right">
         ENERGY
       </span>
     </div>
@@ -1383,7 +1393,7 @@ function Metric({
     <div className="animate-soft-pop rounded-lg bg-white p-4 shadow-soft ring-1 ring-blue-950/5">
       <div className="grid h-10 w-10 place-items-center rounded-lg" style={{ color, background }}>{icon}</div>
       <p className="mt-3 text-xs font-bold uppercase text-slate-500">{label}</p>
-      <p className="mt-1 text-xl font-black" style={{ color }}>{value}</p>
+      <p className="metric-value mt-1 text-xl font-black" style={{ color }}>{value}</p>
       {description && <p className="mt-1 text-xs font-semibold text-slate-500">{description}</p>}
     </div>
   );
