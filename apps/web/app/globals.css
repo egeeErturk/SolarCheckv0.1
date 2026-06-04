@@ -151,11 +151,8 @@ body {
 }
 
 .flow-word-main {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 38%, #d7e2ef 74%, #ffffff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  font-size: clamp(4rem, 17vw, 10rem);
-  color: transparent;
+  font-size: clamp(5rem, 21vw, 12.5rem);
+  color: #ffffff;
   text-shadow:
     0 1px 0 rgba(253, 185, 19, 0.38),
     0 20px 48px rgba(0, 18, 48, 0.6);
@@ -163,7 +160,7 @@ body {
 
 .flow-word-sub {
   color: var(--energy-yellow);
-  font-size: clamp(2rem, 9vw, 5.5rem);
+  font-size: clamp(2.5rem, 11.25vw, 6.9rem);
   margin-top: 0.18em;
   text-shadow: 0 14px 32px rgba(253, 185, 19, 0.24);
 }
@@ -178,11 +175,11 @@ body {
   }
 
   .flow-word-main {
-    font-size: clamp(5.4rem, 7.6vw, 10rem);
+    font-size: clamp(6.75rem, 9.5vw, 12.5rem);
   }
 
   .flow-word-sub {
-    font-size: clamp(2.35rem, 3.65vw, 5rem);
+    font-size: clamp(2.95rem, 4.55vw, 6.25rem);
   }
 }
 
@@ -216,11 +213,11 @@ body {
   }
 
   .flow-word-main {
-    font-size: clamp(3.25rem, 16vw, 4.5rem);
+    font-size: clamp(4.05rem, 20vw, 5.6rem);
   }
 
   .flow-word-sub {
-    font-size: clamp(1.7rem, 8vw, 2.4rem);
+    font-size: clamp(2.1rem, 10vw, 3rem);
   }
 }
 
