@@ -525,25 +525,36 @@ function LocationPage(props: {
   canContinue: boolean;
   onNext: () => void;
 }) {
+  const [isMobileMap, setIsMobileMap] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") {
+      setIsMobileMap(false);
+      return;
+    }
+    const query = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobileMap(query.matches);
+    update();
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
+
+  const map = (
+    <MapPicker
+      latitude={Number.isFinite(props.location.latitude) ? props.location.latitude : 39.9334}
+      longitude={Number.isFinite(props.location.longitude) ? props.location.longitude : 32.8597}
+      addressLine={props.addressLine}
+      showConfirmationPopup={isMobileMap === true && props.canContinue}
+      onConfirmLocation={props.onNext}
+      onChange={(value) => props.setLocation({ ...props.location, ...value })}
+    />
+  );
+
   return (
     <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 lg:grid-cols-[1fr_420px]">
-      <div className="hidden min-h-[560px] overflow-hidden rounded-lg bg-white shadow-soft ring-1 ring-blue-950/5 md:block">
-        <MapPicker
-          latitude={props.location.latitude}
-          longitude={props.location.longitude}
-          onChange={(value) => props.setLocation({ ...props.location, ...value })}
-        />
-      </div>
-      <div className="mobile-location-map overflow-hidden rounded-lg bg-white shadow-soft ring-1 ring-blue-950/5 md:hidden">
-        <MapPicker
-          latitude={props.location.latitude}
-          longitude={props.location.longitude}
-          addressLine={props.addressLine}
-          showConfirmationPopup={props.canContinue}
-          onConfirmLocation={props.onNext}
-          onChange={(value) => props.setLocation({ ...props.location, ...value })}
-        />
-      </div>
+      {isMobileMap === null && <div className="min-h-[340px] rounded-lg bg-slate-100 shadow-soft ring-1 ring-blue-950/5 md:min-h-[560px]" />}
+      {isMobileMap === false && <div className="min-h-[560px] overflow-hidden rounded-lg bg-white shadow-soft ring-1 ring-blue-950/5">{map}</div>}
+      {isMobileMap === true && <div className="mobile-location-map overflow-hidden rounded-lg bg-white shadow-soft ring-1 ring-blue-950/5">{map}</div>}
       <aside className="animate-enter self-start rounded-lg bg-white p-5 shadow-soft ring-1 ring-blue-950/5">
         <StepEyebrow icon={<MapPin size={16} />} label="Konum seçimi" />
         <h2 className="mt-3 text-3xl font-black text-blue-950">Haritadan konum seç</h2>

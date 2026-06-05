@@ -102,17 +102,20 @@ function SelectedMarker({
 }
 
 export default function MapPicker({ latitude, longitude, onChange, addressLine, showConfirmationPopup, onConfirmLocation }: MapPickerProps) {
+  const safeLatitude = Number.isFinite(latitude) ? latitude : 39.9334;
+  const safeLongitude = Number.isFinite(longitude) ? longitude : 32.8597;
+
   return (
-    <MapContainer center={[latitude, longitude]} zoom={12} scrollWheelZoom className="overflow-hidden rounded-lg">
+    <MapContainer center={[safeLatitude, safeLongitude]} zoom={12} scrollWheelZoom className="overflow-hidden rounded-lg">
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <FlyTo latitude={latitude} longitude={longitude} />
+      <FlyTo latitude={safeLatitude} longitude={safeLongitude} />
       <ClickHandler onChange={onChange} />
       <SelectedMarker
-        latitude={latitude}
-        longitude={longitude}
+        latitude={safeLatitude}
+        longitude={safeLongitude}
         onChange={onChange}
         addressLine={addressLine}
         showConfirmationPopup={showConfirmationPopup}
