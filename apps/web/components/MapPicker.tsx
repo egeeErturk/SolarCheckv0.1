@@ -58,7 +58,10 @@ function SelectedMarker({
 
   useEffect(() => {
     if (showConfirmationPopup && addressLine) {
-      markerRef.current?.openPopup();
+      const marker = markerRef.current;
+      if (marker && typeof marker.openPopup === "function") {
+        marker.openPopup();
+      }
     }
   }, [addressLine, latitude, longitude, showConfirmationPopup]);
 

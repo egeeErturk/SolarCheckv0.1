@@ -264,6 +264,7 @@ export default function SolarCheckApp() {
 
   useEffect(() => {
     if (step === "landing") return;
+    if (typeof window.matchMedia !== "function") return;
     if (!window.matchMedia("(max-width: 767px)").matches) return;
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
