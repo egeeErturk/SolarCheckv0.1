@@ -454,13 +454,6 @@ function FlowEnergyLogo({ className = "" }: { className?: string }) {
 function FlowEnergyBrand() {
   return (
     <div className="flow-energy-mark">
-      <div className="hero-solar-panel-visual" aria-hidden="true">
-        <div className="hero-solar-panel-grid">
-          {Array.from({ length: 18 }).map((_, index) => (
-            <span key={index} />
-          ))}
-        </div>
-      </div>
       <span className="sr-only">FLOW ENERGY</span>
       <span aria-hidden="true" className="flow-word flow-word-main block text-center font-black uppercase italic leading-none text-white md:text-right">
         FLOW
