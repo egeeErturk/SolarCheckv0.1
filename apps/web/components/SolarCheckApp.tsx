@@ -33,6 +33,7 @@ import {
   Leaf,
   LineChart,
   MapPin,
+  Share2,
   RefreshCcw,
   Search,
   Send,
@@ -43,7 +44,7 @@ import {
   Zap
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { financialColor, financialSoftColor, financialTone, motionClasses, resultColors } from "./uiTokens";
 
 const MapPicker = dynamic(() => import("./MapPicker"), { ssr: false });
@@ -261,6 +262,14 @@ export default function SolarCheckApp() {
     setStep("usage");
   }
 
+  useEffect(() => {
+    if (step === "landing") return;
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }, [step]);
+
   return (
     <main className="min-h-screen bg-solar-page text-ink-900">
       <TopBar step={step} goBack={() => setStep(step === "location" ? "landing" : step === "usage" ? "location" : step === "solar" ? "usage" : "solar")} />
@@ -445,6 +454,13 @@ function FlowEnergyLogo({ className = "" }: { className?: string }) {
 function FlowEnergyBrand() {
   return (
     <div className="flow-energy-mark">
+      <div className="hero-solar-panel-visual" aria-hidden="true">
+        <div className="hero-solar-panel-grid">
+          {Array.from({ length: 18 }).map((_, index) => (
+            <span key={index} />
+          ))}
+        </div>
+      </div>
       <span className="sr-only">FLOW ENERGY</span>
       <span aria-hidden="true" className="flow-word flow-word-main block text-center font-black uppercase italic leading-none text-white md:text-right">
         FLOW
@@ -522,10 +538,20 @@ function LocationPage(props: {
 }) {
   return (
     <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 lg:grid-cols-[1fr_420px]">
-      <div className="min-h-[560px] overflow-hidden rounded-lg bg-white shadow-soft ring-1 ring-blue-950/5">
+      <div className="hidden min-h-[560px] overflow-hidden rounded-lg bg-white shadow-soft ring-1 ring-blue-950/5 md:block">
         <MapPicker
           latitude={props.location.latitude}
           longitude={props.location.longitude}
+          onChange={(value) => props.setLocation({ ...props.location, ...value })}
+        />
+      </div>
+      <div className="mobile-location-map overflow-hidden rounded-lg bg-white shadow-soft ring-1 ring-blue-950/5 md:hidden">
+        <MapPicker
+          latitude={props.location.latitude}
+          longitude={props.location.longitude}
+          addressLine={props.addressLine}
+          showConfirmationPopup={props.canContinue}
+          onConfirmLocation={props.onNext}
           onChange={(value) => props.setLocation({ ...props.location, ...value })}
         />
       </div>
@@ -759,6 +785,7 @@ function ResultsPage({
   const payback = result.recommendedPackage.paybackYears;
   const paybackTone = !payback || payback > 15 ? "loss" : payback <= 9 ? "profit" : "warning";
   const isPositive = net25 >= 0;
+  const [shareOpen, setShareOpen] = useState(false);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10">
@@ -775,7 +802,9 @@ function ResultsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <button className="btn-ghost flex items-center gap-2"><Download size={16} /> Raporu paylaş</button>
+          <button className="btn-ghost flex items-center gap-2" onClick={() => setShareOpen(true)}>
+            <Share2 size={16} /> Paylaş
+          </button>
           <button className="btn-primary" onClick={() => openLead(result.recommendedPackage)}>Uzmanla görüş</button>
           <RecalculateButton onClick={onRecalculate} />
           <button className="btn-ghost" onClick={onEditInputs}>Bilgileri düzenle</button>
@@ -845,7 +874,129 @@ function ResultsPage({
           </div>
         </div>
       </section>
+      {shareOpen && (
+        <ShareResultsModal
+          result={result}
+          addressLine={addressLine}
+          currency={currency}
+          gains={getProjectionForYears(result.recommendedPackage, [5, 10, 15, 20, 25, 30])}
+          losses={losses}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
     </section>
+  );
+}
+
+function ShareResultsModal({
+  result,
+  addressLine,
+  currency,
+  gains,
+  losses,
+  onClose
+}: {
+  result: SolarPotentialResult;
+  addressLine: string;
+  currency: string;
+  gains: ProjectionPoint[];
+  losses: ReturnType<typeof getLosses>;
+  onClose: () => void;
+}) {
+  const [feedback, setFeedback] = useState("");
+  const [error, setError] = useState("");
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const shareText = `SolarCheck ile çatımın/balkonumun güneş enerjisi potansiyelini hesapladım. Tahmini üretim, geri dönüş süresi ve uzun vadeli tasarruf sonuçlarımı buradan inceleyebilirsiniz: ${shareUrl}`;
+
+  async function copyText(text: string, message: string) {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      }
+      setError("");
+      setFeedback(message);
+    } catch {
+      setError("Kopyalama sırasında bir hata oluştu. Lütfen tekrar deneyin.");
+    }
+  }
+
+  function downloadPdf() {
+    setIsGeneratingPdf(true);
+    setError("");
+    try {
+      const pdf = createSolarReportPdf({ result, addressLine, currency, gains, losses });
+      const url = URL.createObjectURL(pdf);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "solarcheck-flow-energy-raporu.pdf";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setFeedback("PDF raporu indirildi.");
+    } catch {
+      setError("PDF oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.");
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-blue-950/60 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="share-results-title">
+      <div className="max-h-[92vh] w-full max-w-2xl overflow-auto rounded-lg bg-white p-5 shadow-2xl ring-1 ring-blue-950/10 md:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <span className="inline-flex rounded-full px-3 py-1 text-xs font-black" style={{ background: resultColors.softYellow, color: resultColors.corporateNavy }}>Paylaşım</span>
+            <h3 id="share-results-title" className="mt-3 text-2xl font-black text-blue-950">Sonuçlarını Paylaş</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">Linki, hazır paylaşım metnini veya PDF raporunu güvenle paylaşabilirsiniz.</p>
+          </div>
+          <button className="btn-ghost px-3 py-2" onClick={onClose}>Kapat</button>
+        </div>
+
+        <div className="mt-5 grid gap-4">
+          <section className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+            <label className="text-sm font-black text-blue-950" htmlFor="share-link">Paylaşım linki</label>
+            <input id="share-link" readOnly className="input mt-2 text-sm" value={shareUrl} />
+            <button className="btn-primary mt-3 w-full py-3 md:w-auto" onClick={() => copyText(shareUrl, "Paylaşım linki kopyalandı.")}>
+              Linki Kopyala
+            </button>
+          </section>
+
+          <section className="rounded-lg border border-slate-100 bg-white p-4 shadow-sm">
+            <label className="text-sm font-black text-blue-950" htmlFor="share-message">Hazır paylaşım metni</label>
+            <textarea id="share-message" readOnly className="input mt-2 min-h-28 text-sm leading-6" value={shareText} />
+            <button className="btn-ghost mt-3 w-full py-3 md:w-auto" onClick={() => copyText(shareText, "Paylaşım metni kopyalandı.")}>
+              Metni Kopyala
+            </button>
+          </section>
+
+          <section className="rounded-lg border border-yellow-200 p-4" style={{ background: resultColors.softYellow }}>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h4 className="font-black text-blue-950">PDF raporu</h4>
+                <p className="mt-1 text-sm leading-6 text-slate-700">Konum, üretim, amortisman, kazanç projeksiyonu ve kayıp yüzdeleri dahil edilir.</p>
+              </div>
+              <button className="btn-primary py-3" onClick={downloadPdf} disabled={isGeneratingPdf}>
+                <Download size={16} /> {isGeneratingPdf ? "Hazırlanıyor..." : "PDF Olarak İndir"}
+              </button>
+            </div>
+          </section>
+        </div>
+
+        {feedback && <p className="mt-4 rounded-lg px-4 py-3 text-sm font-black" style={{ background: resultColors.profitGreenSoft, color: resultColors.profitGreen }}>{feedback}</p>}
+        {error && <p className="mt-4 rounded-lg px-4 py-3 text-sm font-black" style={{ background: resultColors.lossNavySoft, color: resultColors.lossNavy }}>{error}</p>}
+      </div>
+    </div>
   );
 }
 
@@ -1462,7 +1613,11 @@ function getMonthlyProduction(annualProduction: number) {
 }
 
 function getLongTermGains(pkg: PackageResult): ProjectionPoint[] {
-  return projectionYears.map((year) => {
+  return getProjectionForYears(pkg, projectionYears);
+}
+
+function getProjectionForYears(pkg: PackageResult, years: number[]): ProjectionPoint[] {
+  return years.map((year) => {
     let net = -pkg.installationCost;
     let production = pkg.annualProductionKwh;
     let priceValue = pkg.annualSavings / Math.max(pkg.annualProductionKwh, 1);
@@ -1568,4 +1723,130 @@ function getLosses(direction: RoofDirection, shadeObstacle: ShadeObstacle, roofT
   ];
   const totalLoss = Math.min(85, Math.round(items.reduce((sum, item) => sum + item.value, 0)));
   return { items, totalLoss };
+}
+
+function createSolarReportPdf({
+  result,
+  addressLine,
+  currency,
+  gains,
+  losses
+}: {
+  result: SolarPotentialResult;
+  addressLine: string;
+  currency: string;
+  gains: ProjectionPoint[];
+  losses: ReturnType<typeof getLosses>;
+}) {
+  const pkg = result.recommendedPackage;
+  const lines = [
+    "SolarCheck / Flow Energy Ön Fizibilite Raporu",
+    "",
+    `Seçilen konum: ${addressLine || "Belirtilmedi"}`,
+    `Kullanılan panel paketi: ${pkg.name}`,
+    `Tahmini yıllık üretim: ${numberFormat(pkg.annualProductionKwh)} kWh/yıl`,
+    `Geri dönüş süresi: ${pkg.paybackYears ? `${pkg.paybackYears} yıl` : "Geri dönüş yok"}`,
+    `Yıllık tasarruf: ${currencyFormat(pkg.annualSavings, currency)}`,
+    `25 yıllık net kazanç: ${currencyFormat(pkg.netGain25Years, currency)}`,
+    "",
+    "5, 10, 15, 20, 25 ve 30 yıllık tahmini kazanç:",
+    ...gains.map((point) => `${point.year} yıl: ${point.value >= 0 ? "+" : ""}${currencyFormat(point.value, currency)}`),
+    "",
+    "Kayıp yüzdeleri / verim kayıpları:",
+    ...losses.items.map((loss) => `${loss.label}: %${loss.value}`),
+    `Toplam tahmini kayıp: %${losses.totalLoss}`,
+    "",
+    "Bu sonuçlar tahmini ön fizibilite amacıyla hazırlanmıştır. Karar verme sürecini destekler; kesin teklif ve kurulum kararı için uzman keşfi önerilir."
+  ];
+
+  return buildSimplePdf(lines);
+}
+
+function buildSimplePdf(lines: string[]) {
+  const pageWidth = 595;
+  const pageHeight = 842;
+  const marginX = 52;
+  const firstY = 790;
+  const lineHeight = 18;
+  const pageLineLimit = 40;
+  const pages: string[][] = [[]];
+
+  lines.flatMap((line) => wrapPdfLine(line, 78)).forEach((line) => {
+    if (pages[pages.length - 1].length >= pageLineLimit) pages.push([]);
+    pages[pages.length - 1].push(line);
+  });
+
+  const objects: string[] = [];
+  objects.push("<< /Type /Catalog /Pages 2 0 R >>");
+  objects.push(`<< /Type /Pages /Kids [${pages.map((_, index) => `${3 + index * 2} 0 R`).join(" ")}] /Count ${pages.length} >>`);
+
+  pages.forEach((pageLines, pageIndex) => {
+    const pageObject = 3 + pageIndex * 2;
+    const contentObject = pageObject + 1;
+    const title = pageIndex === 0 ? pageLines[0] || "SolarCheck Raporu" : "SolarCheck Raporu";
+    const contentLines = pageIndex === 0 ? pageLines.slice(1) : pageLines;
+    const content = [
+      "BT",
+      "/F1 16 Tf",
+      "0 0.23 0.44 rg",
+      `${marginX} ${firstY + 12} Td`,
+      `${pdfText(title)} Tj`,
+      "/F1 10 Tf",
+      "0.05 0.09 0.16 rg",
+      ...contentLines.flatMap((line) => [`0 -${lineHeight} Td`, `${pdfText(line)} Tj`]),
+      "ET"
+    ].join("\n");
+
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents ${contentObject} 0 R >>`);
+    objects.push(`<< /Length ${utf8Length(content)} >>\nstream\n${content}\nendstream`);
+  });
+
+  const header = "%PDF-1.4\n";
+  let body = "";
+  const offsets = [0];
+  objects.forEach((object, index) => {
+    offsets.push(utf8Length(header + body));
+    body += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+  const xrefOffset = utf8Length(header + body);
+  const xref = [
+    "xref",
+    `0 ${objects.length + 1}`,
+    "0000000000 65535 f ",
+    ...offsets.slice(1).map((offset) => `${String(offset).padStart(10, "0")} 00000 n `),
+    "trailer",
+    `<< /Size ${objects.length + 1} /Root 1 0 R >>`,
+    "startxref",
+    String(xrefOffset),
+    "%%EOF"
+  ].join("\n");
+
+  return new Blob([header, body, xref], { type: "application/pdf" });
+}
+
+function wrapPdfLine(line: string, maxLength: number) {
+  if (!line) return [""];
+  const words = line.split(" ");
+  const wrapped: string[] = [];
+  let current = "";
+  words.forEach((word) => {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxLength && current) {
+      wrapped.push(current);
+      current = word;
+    } else {
+      current = next;
+    }
+  });
+  if (current) wrapped.push(current);
+  return wrapped;
+}
+
+function pdfText(value: string) {
+  const hex = Array.from(value).map((char) => char.charCodeAt(0).toString(16).padStart(4, "0")).join("");
+  return `<FEFF${hex}>`;
+}
+
+function utf8Length(value: string) {
+  return new TextEncoder().encode(value).length;
 }
