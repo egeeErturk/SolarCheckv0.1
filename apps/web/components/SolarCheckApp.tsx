@@ -43,13 +43,14 @@ import {
   Zap
 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { financialColor, financialSoftColor, financialTone, motionClasses, resultColors } from "./uiTokens";
 
 const MapPicker = dynamic(() => import("./MapPicker"), { ssr: false });
 
 type Step = "landing" | "location" | "usage" | "solar" | "results";
 type DaytimeConsumption = "yes" | "partial" | "no";
+type MobileInputStep = "location" | "consumption" | "area" | "shade" | "package" | "review";
 type ProjectionPoint = {
   year: number;
   value: number;
@@ -177,6 +178,7 @@ export default function SolarCheckApp() {
   const [roofTilt, setRoofTilt] = useState("30");
   const [roofTiltError, setRoofTiltError] = useState("");
   const [shadeObstacle, setShadeObstacle] = useState<ShadeObstacle>("open");
+  const [preferredPackage, setPreferredPackage] = useState<"A" | "B" | "C" | "D">("A");
   const [daytimeConsumption] = useState<DaytimeConsumption>("partial");
   const [result, setResult] = useState<SolarPotentialResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -265,54 +267,102 @@ export default function SolarCheckApp() {
     <main className="min-h-screen bg-solar-page text-ink-900">
       <TopBar step={step} goBack={() => setStep(step === "location" ? "landing" : step === "usage" ? "location" : step === "solar" ? "usage" : "solar")} />
       {step === "landing" && <LandingPage onStart={() => setStep("location")} onDiscovery={() => setStep("location")} />}
-      {step === "location" && (
-        <LocationPage
-          query={query}
-          setQuery={setQuery}
-          searchAddress={searchAddress}
-          suggestions={suggestions}
-          selectSuggestion={(item) => {
-            setLocation({ latitude: item.latitude, longitude: item.longitude, address: item });
-            setLocationSelected(true);
-            setSuggestions([]);
-            setQuery(item.line);
-          }}
-          location={location}
-          setLocation={(value) => {
-            setLocation(value);
-            setLocationSelected(true);
-          }}
-          addressLine={addressLine}
-          useCurrentLocation={useCurrentLocation}
-          canContinue={locationSelected}
-          onNext={() => setStep("usage")}
-        />
-      )}
-      {step === "usage" && (
-        <UsagePage
-          area={area}
-          setArea={setArea}
-          usageType={usageType}
-          setUsageType={setUsageType}
-          monthlyConsumption={monthlyConsumption}
-          setMonthlyConsumption={setMonthlyConsumption}
-          monthlyBill={monthlyBill}
-          setMonthlyBill={setMonthlyBill}
-          onNext={() => setStep("solar")}
-        />
-      )}
-      {step === "solar" && (
-        <SolarDetailsPage
-          direction={direction}
-          setDirection={setDirection}
-          roofTilt={roofTilt}
-          setRoofTilt={setRoofTilt}
-          roofTiltError={roofTiltError}
-          shadeObstacle={shadeObstacle}
-          setShadeObstacle={setShadeObstacle}
-          loading={loading}
-          onCalculate={calculate}
-        />
+      {step !== "landing" && step !== "results" && (
+        <>
+          <div className="md:hidden">
+            <MobileInputFlow
+              query={query}
+              setQuery={setQuery}
+              searchAddress={searchAddress}
+              suggestions={suggestions}
+              selectSuggestion={(item) => {
+                setLocation({ latitude: item.latitude, longitude: item.longitude, address: item });
+                setLocationSelected(true);
+                setSuggestions([]);
+                setQuery(item.line);
+              }}
+              location={location}
+              setLocation={(value) => {
+                setLocation(value);
+                setLocationSelected(true);
+              }}
+              addressLine={addressLine}
+              useCurrentLocation={useCurrentLocation}
+              canContinue={locationSelected}
+              area={area}
+              setArea={setArea}
+              usageType={usageType}
+              setUsageType={setUsageType}
+              monthlyConsumption={monthlyConsumption}
+              setMonthlyConsumption={setMonthlyConsumption}
+              monthlyBill={monthlyBill}
+              setMonthlyBill={setMonthlyBill}
+              direction={direction}
+              setDirection={setDirection}
+              roofTilt={roofTilt}
+              setRoofTilt={setRoofTilt}
+              roofTiltError={roofTiltError}
+              shadeObstacle={shadeObstacle}
+              setShadeObstacle={setShadeObstacle}
+              preferredPackage={preferredPackage}
+              setPreferredPackage={setPreferredPackage}
+              loading={loading}
+              onCalculate={calculate}
+              onExit={() => setStep("landing")}
+            />
+          </div>
+          <div className="hidden md:block">
+            {step === "location" && (
+              <LocationPage
+                query={query}
+                setQuery={setQuery}
+                searchAddress={searchAddress}
+                suggestions={suggestions}
+                selectSuggestion={(item) => {
+                  setLocation({ latitude: item.latitude, longitude: item.longitude, address: item });
+                  setLocationSelected(true);
+                  setSuggestions([]);
+                  setQuery(item.line);
+                }}
+                location={location}
+                setLocation={(value) => {
+                  setLocation(value);
+                  setLocationSelected(true);
+                }}
+                addressLine={addressLine}
+                useCurrentLocation={useCurrentLocation}
+                canContinue={locationSelected}
+                onNext={() => setStep("usage")}
+              />
+            )}
+            {step === "usage" && (
+              <UsagePage
+                area={area}
+                setArea={setArea}
+                usageType={usageType}
+                setUsageType={setUsageType}
+                monthlyConsumption={monthlyConsumption}
+                setMonthlyConsumption={setMonthlyConsumption}
+                monthlyBill={monthlyBill}
+                setMonthlyBill={setMonthlyBill}
+                onNext={() => setStep("solar")}
+              />
+            )}
+            {step === "solar" && (
+              <SolarDetailsPage
+                direction={direction}
+                setDirection={setDirection}
+                roofTilt={roofTilt}
+                setRoofTilt={setRoofTilt}
+                roofTiltError={roofTiltError}
+                shadeObstacle={shadeObstacle}
+                setShadeObstacle={setShadeObstacle}
+                loading={loading}
+                onCalculate={calculate}
+              />
+            )}
+          </div>
+        </>
       )}
       {step === "results" && result && (
         <ResultsPage
@@ -380,7 +430,7 @@ function TopBar({ step, goBack }: { step: Step; goBack: () => void }) {
           </div>
         )}
         {step !== "landing" && step !== "results" && (
-          <button className="btn-ghost flex items-center gap-2" onClick={goBack}>
+          <button className="btn-ghost hidden items-center gap-2 md:flex" onClick={goBack}>
             <ArrowLeft size={16} /> Geri
           </button>
         )}
@@ -507,6 +557,338 @@ function LocationDataExplanation() {
   );
 }
 
+function MobileInputFlow(props: {
+  query: string;
+  setQuery: (value: string) => void;
+  searchAddress: () => void;
+  suggestions: Array<Address & { latitude: number; longitude: number }>;
+  selectSuggestion: (item: Address & { latitude: number; longitude: number }) => void;
+  location: LocationInput;
+  setLocation: (location: LocationInput) => void;
+  addressLine: string;
+  useCurrentLocation: () => void;
+  canContinue: boolean;
+  area: string;
+  setArea: (value: string) => void;
+  usageType: UsageType;
+  setUsageType: (value: UsageType) => void;
+  monthlyConsumption: string;
+  setMonthlyConsumption: (value: string) => void;
+  monthlyBill: string;
+  setMonthlyBill: (value: string) => void;
+  direction: RoofDirection;
+  setDirection: (value: RoofDirection) => void;
+  roofTilt: string;
+  setRoofTilt: (value: string) => void;
+  roofTiltError: string;
+  shadeObstacle: ShadeObstacle;
+  setShadeObstacle: (value: ShadeObstacle) => void;
+  preferredPackage: "A" | "B" | "C" | "D";
+  setPreferredPackage: (value: "A" | "B" | "C" | "D") => void;
+  loading: boolean;
+  onCalculate: () => void;
+  onExit: () => void;
+}) {
+  const mobileSteps: Array<{ id: MobileInputStep; label: string; title: string }> = [
+    { id: "location", label: "Konum", title: "Konum seç" },
+    { id: "consumption", label: "Tüketim", title: "Elektrik tüketimi" },
+    { id: "area", label: "Alan", title: "Çatı / alan" },
+    { id: "shade", label: "Gölge", title: "Gölge durumu" },
+    { id: "package", label: "Paket", title: "Paket tercihi" },
+    { id: "review", label: "Kontrol", title: "Son kontrol" }
+  ];
+  const [mobileStep, setMobileStep] = useState<MobileInputStep>("location");
+  const stepTopRef = useRef<HTMLDivElement | null>(null);
+  const currentIndex = mobileSteps.findIndex((item) => item.id === mobileStep);
+  const progress = ((currentIndex + 1) / mobileSteps.length) * 100;
+  const current = mobileSteps[currentIndex];
+  const packageOptions = (["A", "B", "C", "D"] as const).map((id) => ({
+    value: id,
+    label: `Panel ${id}`,
+    tag: packageCopy[id].badge,
+    description: packageCopy[id].description
+  }));
+  const shadeMobileOptions: Array<{ value: ShadeObstacle; label: string; description: string; icon: ReactNode }> = [
+    { value: "open", label: "Gölge yok", description: "Açık alan", icon: <Sun /> },
+    { value: "partial", label: "Az gölge", description: "Kısa süreli", icon: <CloudSun /> },
+    { value: "tree", label: "Orta gölge", description: "Ağaç etkisi", icon: <TreePine /> },
+    { value: "building", label: "Yoğun gölge", description: "Bina etkisi", icon: <Building2 /> }
+  ];
+  const selectedUsage = usageOptions.find((item) => item.value === props.usageType)?.label ?? props.usageType;
+  const selectedShade = shadeMobileOptions.find((item) => item.value === props.shadeObstacle)?.label ?? "Gölge bilgisi";
+  const selectedDirection = directionOptions.find((item) => item.value === props.direction)?.label ?? "Güney";
+  const canGoNext =
+    mobileStep === "location"
+      ? props.canContinue
+      : mobileStep === "consumption"
+        ? Number(props.monthlyConsumption) > 0 || Number(props.monthlyBill) > 0
+        : mobileStep === "area"
+          ? Number(props.area) > 0
+          : true;
+
+  useEffect(() => {
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+    window.requestAnimationFrame(() => {
+      stepTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [mobileStep]);
+
+  function goBack() {
+    if (currentIndex === 0) {
+      props.onExit();
+      return;
+    }
+    setMobileStep(mobileSteps[currentIndex - 1].id);
+  }
+
+  function goNext() {
+    if (currentIndex < mobileSteps.length - 1) {
+      setMobileStep(mobileSteps[currentIndex + 1].id);
+    }
+  }
+
+  return (
+    <section ref={stepTopRef} className="mobile-stepper-shell min-h-[calc(100vh-73px)] scroll-mt-20 bg-slate-50 px-4 pb-28 pt-4">
+      <div className="mx-auto max-w-md">
+        <div className="mobile-progress-card">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-black uppercase tracking-wide text-blue-950">{currentIndex + 1} / {mobileSteps.length} {current.label}</span>
+            <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-black text-blue-950">Mobil akış</span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-blue-950/10">
+            <div className="h-full rounded-full bg-solar-gradient transition-all duration-300" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+
+        <div key={mobileStep} className="mobile-step-panel animate-mobile-step">
+          <h2 className="text-2xl font-black text-blue-950">{current.title}</h2>
+          {mobileStep === "location" && (
+            <div className="mt-4 grid gap-3">
+              <div className="mobile-map-frame">
+                <MapPicker
+                  latitude={props.location.latitude}
+                  longitude={props.location.longitude}
+                  addressLine={props.addressLine}
+                  canConfirm={props.canContinue}
+                  onConfirm={goNext}
+                  onChange={(value: { latitude: number; longitude: number; address?: Address }) => props.setLocation({ ...props.location, ...value })}
+                />
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={props.query}
+                  onChange={(event) => props.setQuery(event.target.value)}
+                  className="input mobile-input"
+                  placeholder="Adres veya şehir"
+                />
+                <button type="button" className="btn-icon bg-blue-950 text-white" onClick={props.searchAddress} title="Ara">
+                  <Search size={18} />
+                </button>
+              </div>
+              {!!props.suggestions.length && (
+                <div className="max-h-28 overflow-auto rounded-lg border border-slate-200 bg-white">
+                  {props.suggestions.slice(0, 3).map((item) => (
+                    <button
+                      type="button"
+                      key={`${item.latitude}-${item.longitude}-${item.line}`}
+                      className="block w-full border-b border-slate-100 px-3 py-2 text-left text-xs font-semibold text-blue-950"
+                      onClick={() => props.selectSuggestion(item)}
+                    >
+                      {item.line}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <button type="button" className="btn-ghost w-full py-3" onClick={props.useCurrentLocation}>
+                <MapPin size={17} /> Mevcut konum
+              </button>
+              <div className="mobile-summary-line">
+                <span>Seçilen</span>
+                <strong>{props.canContinue ? props.addressLine || "Konum seçildi" : "Henüz konum seçilmedi"}</strong>
+              </div>
+            </div>
+          )}
+
+          {mobileStep === "consumption" && (
+            <div className="mt-4 grid gap-4">
+              <p className="mobile-step-copy">kWh biliyorsan onu gir; bilmiyorsan fatura tutarı yeterli.</p>
+              <label className="mobile-field-card">
+                <span>Aylık tüketim</span>
+                <div className="flex items-end gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    value={props.monthlyConsumption}
+                    onChange={(event) => props.setMonthlyConsumption(event.target.value)}
+                    className="input mobile-input text-2xl font-black"
+                    placeholder="250"
+                  />
+                  <strong>kWh</strong>
+                </div>
+              </label>
+              <label className="mobile-field-card">
+                <span>Fatura tutarı</span>
+                <div className="flex items-end gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    value={props.monthlyBill}
+                    onChange={(event) => props.setMonthlyBill(event.target.value)}
+                    className="input mobile-input text-2xl font-black"
+                    placeholder="850"
+                  />
+                  <strong>TL</strong>
+                </div>
+              </label>
+            </div>
+          )}
+
+          {mobileStep === "area" && (
+            <div className="mt-4 grid gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                {usageOptions.map((option) => (
+                  <MobileChoiceCard
+                    key={option.value}
+                    selected={props.usageType === option.value}
+                    icon={option.icon}
+                    title={option.label}
+                    subtitle={option.value === "balcony" ? "Kompakt" : option.value === "roof" ? "Yüksek üretim" : option.value === "terrace" ? "Açık alan" : "Ortak alan"}
+                    onClick={() => props.setUsageType(option.value)}
+                  />
+                ))}
+              </div>
+              <label className="mobile-field-card">
+                <span>Kullanılabilir alan</span>
+                <div className="flex items-end gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    value={props.area}
+                    onChange={(event) => props.setArea(event.target.value)}
+                    className="input mobile-input text-2xl font-black"
+                  />
+                  <strong>m²</strong>
+                </div>
+              </label>
+              <label className="mobile-field-card">
+                <span>Çatı eğimi</span>
+                <div className="flex items-end gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={90}
+                    value={props.roofTilt}
+                    onChange={(event) => props.setRoofTilt(event.target.value)}
+                    className="input mobile-input text-2xl font-black"
+                  />
+                  <strong>°</strong>
+                </div>
+              </label>
+            </div>
+          )}
+
+          {mobileStep === "shade" && (
+            <div className="mt-4 grid gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                {shadeMobileOptions.map((option) => (
+                  <MobileChoiceCard
+                    key={option.value}
+                    selected={props.shadeObstacle === option.value}
+                    icon={option.icon}
+                    title={option.label}
+                    subtitle={option.description}
+                    onClick={() => props.setShadeObstacle(option.value)}
+                  />
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {directionOptions.slice(0, 6).map((option) => (
+                  <button
+                    type="button"
+                    key={option.value}
+                    className={`mobile-mini-choice ${props.direction === option.value ? "mobile-mini-choice-selected" : ""}`}
+                    onClick={() => props.setDirection(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {mobileStep === "package" && (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {packageOptions.map((option) => (
+                <button
+                  type="button"
+                  key={option.value}
+                  className={`mobile-package-choice ${props.preferredPackage === option.value ? "mobile-package-choice-selected" : ""}`}
+                  onClick={() => props.setPreferredPackage(option.value)}
+                >
+                  <span className="text-xs font-black text-yellow-500">{option.tag}</span>
+                  <strong>{option.label}</strong>
+                  <small>{option.description}</small>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {mobileStep === "review" && (
+            <div className="mt-4 grid gap-3">
+              <MobileReviewRow label="Konum" value={props.addressLine || "Seçili konum"} />
+              <MobileReviewRow label="Tüketim" value={`${props.monthlyConsumption || "-"} kWh/ay`} />
+              <MobileReviewRow label="Alan" value={`${selectedUsage}, ${props.area} m²`} />
+              <MobileReviewRow label="Gölge" value={`${selectedShade}, ${selectedDirection}`} />
+              <MobileReviewRow label="Paket" value={`Panel ${props.preferredPackage}`} />
+              {props.roofTiltError && (
+                <p className="rounded-lg px-3 py-2 text-sm font-black" style={{ background: resultColors.lossNavySoft, color: resultColors.lossNavy }}>
+                  {props.roofTiltError}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="mobile-step-actions">
+        <button type="button" className="btn-ghost flex-1 py-4" onClick={goBack}>
+          <ArrowLeft size={17} /> Geri
+        </button>
+        {mobileStep === "review" ? (
+          <button type="button" className="btn-primary flex-[1.4] py-4" onClick={props.onCalculate} disabled={props.loading}>
+            {props.loading ? <span className="energy-spinner !h-5 !w-5 !border-2" /> : <Calculator size={18} />}
+            {props.loading ? "Hesaplanıyor..." : "Hesapla"}
+          </button>
+        ) : (
+          <button type="button" className="btn-primary flex-[1.4] py-4 disabled:cursor-not-allowed disabled:opacity-50" onClick={goNext} disabled={!canGoNext}>
+            {mobileStep === "location" ? "Bu konumu kullan" : "Devam Et"} <ChevronRight size={18} />
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function MobileChoiceCard({ selected, icon, title, subtitle, onClick }: { selected: boolean; icon?: ReactNode; title: string; subtitle: string; onClick: () => void }) {
+  return (
+    <button type="button" className={`mobile-choice-card ${selected ? "mobile-choice-card-selected" : ""}`} onClick={onClick}>
+      <span className="mobile-choice-icon">{icon}</span>
+      <strong>{title}</strong>
+      <small>{subtitle}</small>
+      {selected && <Check className="absolute right-2 top-2 text-yellow-500" size={17} />}
+    </button>
+  );
+}
+
+function MobileReviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="mobile-review-row">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
 function LocationPage(props: {
   query: string;
   setQuery: (value: string) => void;
@@ -526,7 +908,7 @@ function LocationPage(props: {
         <MapPicker
           latitude={props.location.latitude}
           longitude={props.location.longitude}
-          onChange={(value) => props.setLocation({ ...props.location, ...value })}
+          onChange={(value: { latitude: number; longitude: number; address?: Address }) => props.setLocation({ ...props.location, ...value })}
         />
       </div>
       <aside className="animate-enter self-start rounded-lg bg-white p-5 shadow-soft ring-1 ring-blue-950/5">
