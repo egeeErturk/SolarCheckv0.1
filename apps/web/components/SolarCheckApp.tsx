@@ -403,11 +403,6 @@ function LandingPage({ onStart, onDiscovery }: { onStart: () => void; onDiscover
   return (
     <section className="hero-shell relative isolate overflow-hidden">
       <div className="absolute inset-0">
-        <img
-          className="hidden h-full w-full object-cover"
-          src="https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=1800&q=85"
-          alt="Güneş paneli kurulumu"
-        />
         <div className="hero-grid-bg absolute inset-0" />
       </div>
       <FlowEnergyLogo className="hero-corner-logo absolute right-4 top-4 z-20 sm:right-6 md:right-10 md:top-8" />
