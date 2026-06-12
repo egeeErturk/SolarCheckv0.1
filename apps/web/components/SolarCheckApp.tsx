@@ -2,6 +2,7 @@
 
 import {
   calculateSolarPotential,
+  estimateMonthlyConsumptionFromBill,
   geocodeAddress,
   reverseGeocodeLocation,
   submitLeadForm,
@@ -191,6 +192,14 @@ export default function SolarCheckApp() {
 
   const inferredSlope = inferSlope(usageType);
 
+  function syncMonthlyBill(value: string) {
+    setMonthlyBill(value);
+    const convertedConsumption = estimateMonthlyConsumptionFromBill(location.address?.country, Number(value));
+    if (convertedConsumption !== undefined) {
+      setMonthlyConsumption(String(convertedConsumption));
+    }
+  }
+
   async function searchAddress() {
     if (!query.trim()) return;
     try {
@@ -307,7 +316,7 @@ export default function SolarCheckApp() {
           monthlyConsumption={monthlyConsumption}
           setMonthlyConsumption={setMonthlyConsumption}
           monthlyBill={monthlyBill}
-          setMonthlyBill={setMonthlyBill}
+          setMonthlyBill={syncMonthlyBill}
           onNext={() => setStep("solar")}
         />
       )}

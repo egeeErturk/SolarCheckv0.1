@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculatePackageResults, estimateShadowFallback, getElectricityPriceByCountry } from "../src/index.js";
+import { calculatePackageResults, estimateMonthlyConsumptionFromBill, estimateShadowFallback, getElectricityPriceByCountry } from "../src/index.js";
 import type { SolarCalculationInput } from "../src/index.js";
 
 const baseInput: SolarCalculationInput = {
@@ -24,6 +24,10 @@ test("Test A: Çanakkale küçük alanda A üretim ve C fiyat/performans görün
   assert.ok(c);
   assert.ok(a.annualProductionKwh > 2500);
   assert.ok(c.paybackYears && c.paybackYears < 12);
+});
+
+test("Test E: fatura tutari mevcut elektrik fiyatiyla aylik kWh degerine cevrilir", () => {
+  assert.equal(estimateMonthlyConsumptionFromBill("Turkiye", 900), 300);
 });
 
 test("Test B: Antalya radyasyon artışı B paketini üretimde öne çıkarır", () => {
