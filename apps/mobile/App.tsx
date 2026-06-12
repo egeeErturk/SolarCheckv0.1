@@ -243,7 +243,7 @@ function AreaAndUsageScreen(props: {
       ]} />
       <TextInput style={styles.input} keyboardType="numeric" value={props.monthlyConsumption} onChangeText={props.setMonthlyConsumption} placeholder="Aylık tüketim, kWh" />
       <Text style={styles.caption}>Elektrik tüketiminizi faturanızdaki tüketim detaylarında görebilirsiniz.</Text>
-      <TextInput style={styles.input} keyboardType="numeric" value={props.monthlyBill} onChangeText={props.setMonthlyBill} placeholder="Bilmiyorsan fatura tutari" />
+      <TextInput style={styles.input} keyboardType="numeric" value={props.monthlyBill} onChangeText={props.setMonthlyBill} placeholder="Bilmiyorsan fatura tutarı" />
       <Pressable style={styles.primaryButton} onPress={props.onNext}><Text style={styles.primaryText}>Devam et</Text></Pressable>
     </ScrollView>
   );
