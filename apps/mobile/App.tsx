@@ -1,5 +1,6 @@
 import {
   calculateSolarPotential,
+  estimateMonthlyConsumptionFromBill,
   geocodeAddress,
   submitLeadForm,
   type Address,
@@ -45,6 +46,7 @@ export default function App() {
   const [area, setArea] = useState("10");
   const [usageType, setUsageType] = useState<UsageType>("balcony");
   const [monthlyConsumption, setMonthlyConsumption] = useState("250");
+  const [monthlyBill, setMonthlyBill] = useState("");
   const [direction, setDirection] = useState<RoofDirection>("south");
   const [slope, setSlope] = useState<RoofSlope>("medium");
   const [roofTilt, setRoofTilt] = useState("30");
@@ -100,6 +102,14 @@ export default function App() {
     setStep("results");
   }
 
+  function syncMonthlyBill(value: string) {
+    setMonthlyBill(value);
+    const convertedConsumption = estimateMonthlyConsumptionFromBill(location.address?.country, Number(value));
+    if (convertedConsumption !== undefined) {
+      setMonthlyConsumption(String(convertedConsumption));
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
@@ -131,6 +141,8 @@ export default function App() {
           setUsageType={setUsageType}
           monthlyConsumption={monthlyConsumption}
           setMonthlyConsumption={setMonthlyConsumption}
+          monthlyBill={monthlyBill}
+          setMonthlyBill={syncMonthlyBill}
           onNext={() => setStep("roof")}
         />
       )}
@@ -214,6 +226,8 @@ function AreaAndUsageScreen(props: {
   setUsageType: (value: UsageType) => void;
   monthlyConsumption: string;
   setMonthlyConsumption: (value: string) => void;
+  monthlyBill: string;
+  setMonthlyBill: (value: string) => void;
   onNext: () => void;
 }) {
   return (
@@ -229,6 +243,7 @@ function AreaAndUsageScreen(props: {
       ]} />
       <TextInput style={styles.input} keyboardType="numeric" value={props.monthlyConsumption} onChangeText={props.setMonthlyConsumption} placeholder="Aylık tüketim, kWh" />
       <Text style={styles.caption}>Elektrik tüketiminizi faturanızdaki tüketim detaylarında görebilirsiniz.</Text>
+      <TextInput style={styles.input} keyboardType="numeric" value={props.monthlyBill} onChangeText={props.setMonthlyBill} placeholder="Bilmiyorsan fatura tutari" />
       <Pressable style={styles.primaryButton} onPress={props.onNext}><Text style={styles.primaryText}>Devam et</Text></Pressable>
     </ScrollView>
   );

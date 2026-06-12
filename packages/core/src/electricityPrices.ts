@@ -29,3 +29,10 @@ export function getElectricityPriceByCountry(country?: string, override?: number
   }
   return base;
 }
+
+export function estimateMonthlyConsumptionFromBill(country: string | undefined, monthlyBillAmount: number, override?: number): number | undefined {
+  const bill = Number(monthlyBillAmount);
+  const electricityPrice = getElectricityPriceByCountry(country, override);
+  if (!Number.isFinite(bill) || bill <= 0 || electricityPrice.pricePerKwh <= 0) return undefined;
+  return Math.round(bill / electricityPrice.pricePerKwh);
+}
