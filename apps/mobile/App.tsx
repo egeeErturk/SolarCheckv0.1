@@ -196,6 +196,7 @@ function LocationPickerScreen(props: {
       <MapView
         style={styles.map}
         region={props.region}
+        mapType="satellite"
         onPress={(event) => props.setLocation({ ...props.location, latitude: event.nativeEvent.coordinate.latitude, longitude: event.nativeEvent.coordinate.longitude })}
       >
         <Marker draggable coordinate={{ latitude: props.location.latitude, longitude: props.location.longitude }} onDragEnd={(event) => props.setLocation({ ...props.location, latitude: event.nativeEvent.coordinate.latitude, longitude: event.nativeEvent.coordinate.longitude })} />
