@@ -104,12 +104,12 @@ const slopeLabels: Record<RoofSlope, string> = {
 
 const directionLoss: Record<RoofDirection, number> = {
   south: 0,
-  southeast: 5,
-  southwest: 5,
-  east: 15,
-  west: 15,
-  north: 45,
-  unknown: 12
+  southeast: 4,
+  southwest: 4,
+  east: 12,
+  west: 12,
+  north: 30,
+  unknown: 15
 };
 
 const shadeLoss: Record<ShadeObstacle, number> = {
