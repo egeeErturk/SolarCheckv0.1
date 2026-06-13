@@ -2,12 +2,12 @@ import type { PackageAssumption, RoofDirection, RoofSlope, ShadeObstacle } from 
 
 export const DIRECTION_FACTORS: Record<RoofDirection, number> = {
   south: 1,
-  southeast: 0.95,
-  southwest: 0.95,
-  east: 0.85,
-  west: 0.85,
-  north: 0.55,
-  unknown: 0.88
+  southeast: 1,
+  southwest: 1,
+  east: 1,
+  west: 1,
+  north: 1,
+  unknown: 1
 };
 
 export const SLOPE_FACTORS: Record<RoofSlope, number> = {
